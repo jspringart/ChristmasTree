@@ -352,3 +352,11 @@ void debugInfo()
 //	setLightBrightness(brightness);
 //	setLightColor(colorState);	
 //}
+
+//d11000; d21000; ac1
+//
+//d10; d210; ac3; fa1000
+//
+//d11.5; d20; ac2; fc1.5
+//
+//d11000000; d21000000; ac0
