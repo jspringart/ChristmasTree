@@ -9,6 +9,7 @@ enum lightcolor {
 	MULTI,
 	OFF
 };
+void setLightColor(lightcolor lights);
 
 const bool DEBUG = true;
 
