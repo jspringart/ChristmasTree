@@ -31,6 +31,8 @@ lightcolor ledColor = WHITE;
 
 // show
 long showNumber;
+unsigned long delay1 = 100000;
+unsigned long delay2 = 100;
 
 void setup() {
 	// setup pins
@@ -43,7 +45,7 @@ void setup() {
 	previousDebugMicros = 0;
 	debugInterval = 1; // in seconds
 	previousShowMicros = 0;
-	showInterval = 5;
+	showInterval = 100000;
 
 	randomSeed(analogRead(0));
 
@@ -133,9 +135,37 @@ void enableLights(bool value)
 }
 
 void show() {
-	if ((currentMicros - previousShowMicros >= (showInterval * 1000000L))) {
+	if ((currentMicros - previousShowMicros >= (showInterval))) {
 		
 		ledColor = (lightcolor)showNumber;
+
+		previousShowMicros = micros();
+	}
+}
+
+void show2() {
+	if ((currentMicros - previousShowMicros >= (showInterval))) {
+
+		delay1--;
+		delay2++;
+
+		if (ledColor == OFF) {
+			ledColor = WHITE;
+			showInterval = delay2;
+		}
+		else
+		{
+			ledColor = OFF;
+			showInterval = delay1;
+		}
+
+		if (delay1 <= 0)
+		{
+			delay1 = 100000;
+			delay2 = 100;
+		}
+
+		
 
 		previousShowMicros = micros();
 	}
@@ -161,8 +191,7 @@ void show() {
 //bool lightColorState;	// TRUE = WHITE; FALSE = COLOR
 //int lightBrightness;	// 255 = ON; 0 = OFF
 //int action;
-//unsigned long delay1;
-//unsigned long delay2;
+
 //unsigned long colorChanageInterval;
 //unsigned long fadeColorInterval;
 //bool fadeUp;
