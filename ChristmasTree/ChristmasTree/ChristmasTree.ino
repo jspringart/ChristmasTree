@@ -31,7 +31,7 @@ lightcolor ledColor = WHITE;
 
 // show
 long showNumber;
-unsigned long delay1 = 100000;
+unsigned long delay1 = 1000000;
 unsigned long delay2 = 100;
 
 void setup() {
@@ -151,17 +151,17 @@ void show2() {
 
 		if (ledColor == OFF) {
 			ledColor = WHITE;
-			showInterval = delay2;
+			showInterval = delay1;
 		}
 		else
 		{
 			ledColor = OFF;
-			showInterval = delay1;
+			showInterval = delay2;
 		}
 
 		if (delay1 <= 0)
 		{
-			delay1 = 100000;
+			delay1 = 1000000;
 			delay2 = 100;
 		}
 
