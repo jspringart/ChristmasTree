@@ -14,8 +14,8 @@ void setLightColor(lightcolor lights);
 const bool DEBUG = true;
 
 // pin mapping
-int lightsPinA = 13;
-int lightsPinB = 12;
+int lightsPinA = 10;
+int lightsPinB = 11;
 int lightsPinEnable = 6;
 
 // timing
@@ -62,10 +62,11 @@ void setup() {
 
 void loop() {
 	currentMicros = micros();
-	showNumber = random(3);
+	analogWrite(lightsPinA, 255);
+	/*showNumber = random(3);
 
 	setLightColor(ledColor);
-	show2();
+	show2();*/
 	
 	if (DEBUG) {
 		displayDebugInfo();
