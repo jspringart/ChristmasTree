@@ -4,10 +4,13 @@
  Author:	Jason Springart
 */
 
-// constants
+enum lightcolor {
+	WHITE,
+	MULTI,
+	OFF
+};
+
 const bool DEBUG = true;
-const bool WHITE = false;
-const bool MULTICOLOR = true;
 
 // pin mapping
 int lightsPinA = 13;
@@ -21,7 +24,7 @@ double debugInterval;
 
 // leds
 bool lightsOn = true;
-bool lightColor = WHITE;
+lightcolor ledColor = WHITE;
 
 void setup() {
 	// setup pins
@@ -41,7 +44,7 @@ void setup() {
 	enableLights(lightsOn);
 
 	// initalize light color
-	setLightColor(lightColor);
+	setLightColor(ledColor);
 }
 
 void loop() {
@@ -69,11 +72,20 @@ void displayDebugInfo() {
 }
 
 String getLightColor() {
-	if (lightColor)
+	switch (ledColor)
+	{
+	case WHITE:
 		return "white";
-
-	if (!lightColor)
-		return "multicolor";
+		break;
+	case MULTI:
+		return "multi";
+		break;
+	case OFF:
+		return "off";
+		break;
+	default:
+		break;
+	}
 }
 
 String getLightStatus() {
@@ -84,14 +96,22 @@ String getLightStatus() {
 		return "off";
 }
 
-void setLightColor(bool value) {
-	if (value)
+void setLightColor(lightcolor lights) {
+
+	switch (lights)
 	{
-		PORTB = B00100000;
-	}
-	else
-	{
+	case WHITE:
 		PORTB = B00010000;
+		break;
+	case MULTI:
+		PORTB = B00100000;
+		break;
+	case OFF:
+		PORTB = B00000000;
+		PORTB = B00000000;
+		break;
+	default:
+		break;
 	}
 }
 
