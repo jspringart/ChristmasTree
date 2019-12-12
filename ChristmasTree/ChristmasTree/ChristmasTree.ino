@@ -6,8 +6,8 @@
 
 // constants
 const bool DEBUG = true;
-const bool WHITE = true;
-const bool MULTICOLOR = false;
+const bool WHITE = false;
+const bool MULTICOLOR = true;
 
 // pin mapping
 int lightsPinA = 13;
@@ -49,11 +49,13 @@ void loop() {
 
 	//setLightColor(lightColor);
 	
-	displayDebugInfo();		
+	if (DEBUG) {
+		displayDebugInfo();
+	}
 }
 
 void displayDebugInfo() {
-	if ((currentMicros - previousDebugMicros >= (debugInterval * 1000000L)) && DEBUG) {
+	if ((currentMicros - previousDebugMicros >= (debugInterval * 1000000L))) {
 		String debugInfo = "DEBUG: ";
 
 		debugInfo += "IVAL=" + String(debugInterval) + " ";
