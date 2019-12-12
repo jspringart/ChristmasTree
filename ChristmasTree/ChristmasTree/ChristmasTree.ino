@@ -31,8 +31,9 @@ lightcolor ledColor = WHITE;
 
 // show
 long showNumber;
-unsigned long delay1 = 1000000;
-unsigned long delay2 = 100;
+unsigned long delay1 = 0;
+unsigned long delay2 = 100000;
+bool fadeUp = true;
 
 void setup() {
 	// setup pins
@@ -63,7 +64,7 @@ void loop() {
 	currentMicros = micros();
 	showNumber = random(3);
 
-	//setLightColor(lightColor);
+	setLightColor(ledColor);
 	show();
 	
 	if (DEBUG) {
@@ -146,8 +147,23 @@ void show() {
 void show2() {
 	if ((currentMicros - previousShowMicros >= (showInterval))) {
 
-		delay1--;
-		delay2++;
+		if (fadeUp) {
+			delay1++;
+			delay2--;
+			if (delay1 >= 100000)
+			{
+				fadeUp = false;
+			}
+		}
+		else
+		{
+			delay1--;
+			delay2++;
+			if (delay1 <= 0)
+			{
+				fadeUp = true;
+			}
+		}		
 
 		if (ledColor == OFF) {
 			ledColor = WHITE;
@@ -157,19 +173,17 @@ void show2() {
 		{
 			ledColor = OFF;
 			showInterval = delay2;
-		}
-
-		if (delay1 <= 0)
-		{
-			delay1 = 1000000;
-			delay2 = 100;
-		}
-
-		
+		}		
 
 		previousShowMicros = micros();
 	}
 }
+
+
+
+
+
+
 
 
 //
