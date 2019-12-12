@@ -65,7 +65,7 @@ void loop() {
 	showNumber = random(3);
 
 	setLightColor(ledColor);
-	show();
+	show2();
 	
 	if (DEBUG) {
 		displayDebugInfo();
@@ -78,7 +78,9 @@ void displayDebugInfo() {
 
 		debugInfo += "IVAL=" + String(debugInterval) + " ";
 		debugInfo += "ENAB=" + getLightStatus() + " ";
-		debugInfo += "COL=" + getLightColor() + " ";
+		debugInfo += "COLO=" + getLightColor() + " ";
+		debugInfo += "DELA1=" + String(delay1) + " ";
+		debugInfo += "DELA2=" + String(delay2) + " ";
 
 		Serial.println(debugInfo);
 
