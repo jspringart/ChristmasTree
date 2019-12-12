@@ -29,6 +29,9 @@ double showInterval;
 bool lightsOn = true;
 lightcolor ledColor = WHITE;
 
+// show
+long showNumber;
+
 void setup() {
 	// setup pins
 	pinMode(lightsPinA, OUTPUT);
@@ -42,6 +45,8 @@ void setup() {
 	previousShowMicros = 0;
 	showInterval = 5;
 
+	randomSeed(analogRead(0));
+
 	// start serial
 	Serial.begin(9600);
 
@@ -54,8 +59,10 @@ void setup() {
 
 void loop() {
 	currentMicros = micros();
+	showNumber = random(3);
 
 	//setLightColor(lightColor);
+	show();
 	
 	if (DEBUG) {
 		displayDebugInfo();
@@ -128,7 +135,7 @@ void enableLights(bool value)
 void show() {
 	if ((currentMicros - previousShowMicros >= (showInterval * 1000000L))) {
 		
-		ledColor = (lightcolor)(ledColor + 1);
+		ledColor = (lightcolor)showNumber;
 
 		previousShowMicros = micros();
 	}
