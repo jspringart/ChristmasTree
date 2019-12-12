@@ -4,41 +4,26 @@
  Author:	Jason Springart
 */
 
+// constants
+const bool DEBUG = true;
+const bool WHITE = true;
+const bool MULTICOLOR = false;
+
 // pin mapping
 int lightsPinA = 13;
 int lightsPinB = 12;
 int lightsPinEnable = 6;
 
-// constants
-const int MAX_BRIGHTNESS = 255;
-const int MIN_BRIGHTNESS = 0;
-const int MAX_ACTION = 4;
-const int MIN_ACTION = 0;
-const bool DEBUG = false;
-
 // timing
 unsigned long currentMicros;
-unsigned long previousBlinkColorMicros;
-unsigned long previousFadeBrightnessMicros;
-unsigned long previousFadeColorMicros;
-unsigned long previousResetMicros;
+unsigned long previousDebugMicros;
+double debugInterval;
 
-// variables
-bool lightColorState;	// TRUE = WHITE; FALSE = COLOR
-int lightBrightness;	// 255 = ON; 0 = OFF
-int action;
-unsigned long delay1;
-unsigned long delay2;
-unsigned long colorChanageInterval;
-unsigned long fadeColorInterval;
-bool fadeUp;
-unsigned long tempFadeColorInterval;
+// leds
+bool lightsOn = true;
+bool lightColor = WHITE;
 
-void setup()
-{
-	// start serial
-	Serial.begin(9600);
-
+void setup() {
 	// setup pins
 	pinMode(lightsPinA, OUTPUT);
 	pinMode(lightsPinB, OUTPUT);
@@ -46,243 +31,58 @@ void setup()
 
 	// setup variables
 	currentMicros = 0;
-	previousBlinkColorMicros = 0;
-	previousFadeBrightnessMicros = 0;
-	previousFadeColorMicros = 0;
+	previousDebugMicros = 0;
+	debugInterval = 1; // in seconds
 
-	// load from eeprom?
-	lightColorState = true;
-	lightBrightness = 255;
-	action = -1;
-	delay1 = 1000L * 1000L;
-	delay2 = 1000L * 1000L;
-	colorChanageInterval = delay1;
-	fadeColorInterval = delay1;
-	fadeUp = true;
-	tempFadeColorInterval = fadeColorInterval;
+	// start serial
+	Serial.begin(9600);
+
+	// initalize lights
+	enableLights(lightsOn);
+
+	// initalize light color
+	setLightColor(lightColor);
 }
 
-void loop()
-{
-	checkSerial();
-
+void loop() {
 	currentMicros = micros();
-	setAction();
-	setLightBrightness(lightBrightness);
-	setLightColor(lightColorState);
 
-	if (DEBUG)
-	{
-		debugInfo();
-	}
-}
-
-void checkSerial() 
-{
-	String data = "";
-	while (Serial.available() > 0)
-	{
-		data += Serial.readString();
-		if (data.endsWith("\n"))
-		{
-			data.replace("\n", "");
-			splitSerialData(data);
-		}
-	}
-}
-
-void splitSerialData(String data)
-{
-	String tempData = data;
-	tempData.trim();
-	while (tempData.length() > 0)
-	{
-		int index = tempData.indexOf(";");
-		String subString = "";
-		if (index == 0 || index == -1)
-		{			
-			subString = tempData.substring(0);
-		}
-		else
-		{
-			subString = tempData.substring(0, index + 1);
-		}
-		tempData.replace(subString, "");
-		parseSerialData(subString);
-	}
-}
-
-void parseSerialData(String data)
-{
-	if (data.substring(0, 2) == "ac")
-	{
-		int a = atoi(data.substring(2).c_str());
-		action = a;
-	}
-	else if (data.substring(0, 2) == "d1")
-	{
-		float f = data.substring(2).toFloat();
-		delay1 = f * 1000L;
-	}
-	else if (data.substring(0, 2) == "d2")
-	{
-		float f = data.substring(2).toFloat();
-		delay2 = f * 1000L;
-	}
-	else if (data.substring(0, 2) == "fc")
-	{
-		float f = data.substring(2).toFloat();
-		fadeColorInterval = f * 1000L;
-		tempFadeColorInterval = fadeColorInterval;
-	}
-	else if (data.substring(0, 2) == "br")
-	{
-		int a = atoi(data.substring(2).c_str());
-		lightBrightness = a;
-	}
-//	else if (data.substring(0, 2) == "dd") {
-//		int d = atoi(data.substring(2).c_str());
-//		delay1 = d;
-//		delay2 = d;
-//	}
-//	else if (data.substring(0, 2) == "ac") {
-//		int a = atoi(data.substring(2).c_str());
-//		if (a == 3)
-//		{
-//			delay1 = 2000;
-//			delay2 = 0;
-//		}
-//		action = a;
-//	}
-//	
-//	else if (data.substring(0, 2) == "pw") {
-//		int a = atoi(data.substring(2).c_str());
-//		powerState = a;
-//	}
+	//setLightColor(lightColor);
 	
-//	else if (data.substring(0, 2) == "cl") {
-//		int a = atoi(data.substring(2).c_str());
-//		colorState = a;
-//	}
+	displayDebugInfo();		
 }
 
-void setAction()
-{
-	switch (action)
-	{
-		case 0:
-			blinkLightColor();
-			break;
+void displayDebugInfo() {
+	if ((currentMicros - previousDebugMicros >= (debugInterval * 1000000L)) && DEBUG) {
+		String debugInfo = "DEBUG: ";
 
-		case 1:
-			fadeBrightness();
-			break;
+		debugInfo += "IVAL=" + String(debugInterval) + " ";
+		debugInfo += "ENAB=" + getLightStatus() + " ";
+		debugInfo += "COL=" + getLightColor() + " ";
 
-		case 2:
-			blinkLightColor();
-			fadeColor();
-			break;
+		Serial.println(debugInfo);
 
-		case 3:
-			fadeColorReset();
-			break;
-
-		default:
-			break;
+		previousDebugMicros = micros();
 	}
 }
 
-void blinkLightColor()
-{
-	if (currentMicros - previousBlinkColorMicros >= colorChanageInterval)
-	{
-		lightColorState = !lightColorState;
+String getLightColor() {
+	if (lightColor)
+		return "white";
 
-		if (lightColorState)
-		{
-			colorChanageInterval = delay1;
-		}
-		else
-		{
-			colorChanageInterval = delay2;
-		}
-
-		previousBlinkColorMicros = micros();
-	}
+	if (!lightColor)
+		return "multicolor";
 }
 
-void fadeBrightness()
-{
-//	if (currentMicros - previousMillis >= fadeInterval) {
-//
-//		if (fadeUp) {
-//			brightness++;
-//			if (brightness >= MAX_BRIGHTNESS) {
-//				fadeUp = !fadeUp;
-//			}
-//			
-//		} else {
-//			brightness--;
-//			if (brightness <= MIN_BRIGHTNESS) {
-//				fadeUp = !fadeUp;
-//			}
-//		}
-//
-//		previousMillis = millis();
-//	}
+String getLightStatus() {
+	if (lightsOn)
+		return "on";
+
+	if (!lightsOn)
+		return "off";
 }
 
-void fadeColor()
-{
-	if (currentMicros - previousFadeColorMicros >= fadeColorInterval)
-	{
-		if (fadeUp)
-		{
-			delay1--;
-			delay2++;
-			/*if ((delay2 / tempFadeColorInterval) * 100 > 50)
-			{
-				fadeColorInterval += 1;
-			}*/
-			if (delay1 <= 0)
-			{
-				//fadeUp = !fadeUp;
-				previousResetMicros = micros();
-				action = 3;
-				//fadeColorInterval = tempFadeColorInterval;
-			}
-		}
-		else
-		{
-			delay1++;
-			delay2--;
-			/*if ((delay1 / tempFadeColorInterval) * 100 > 50)
-			{
-				fadeColorInterval += 1;
-			}*/
-			if (delay2 <= 0)
-			{
-				//fadeUp = !fadeUp;
-				previousResetMicros = micros();
-				action = 3;
-				//fadeColorInterval = tempFadeColorInterval;
-			}
-		}
-		previousFadeColorMicros = micros();
-	}
-}
-
-void fadeColorReset()
-{
-	if (currentMicros - previousResetMicros >= 5000000L)
-	{
-		fadeUp = !fadeUp;
-		action = 2;
-	}
-}
-
-void setLightColor(bool value)
-{
+void setLightColor(bool value) {
 	if (value)
 	{
 		PORTB = B00100000;
@@ -293,70 +93,340 @@ void setLightColor(bool value)
 	}
 }
 
-void setLightBrightness(int value)
+void enableLights(bool value)
 {
-	analogWrite(lightsPinEnable, value);
-}
-
-void debugInfo()
-{
-	Serial.print(delay1);
-	Serial.print("-");
-	Serial.print(delay2);
-	Serial.print("-");
-	Serial.println(action);
+	digitalWrite(lightsPinEnable, value);
 }
 
 
-
-
-
-
-
-//int colorInterval;
-//int fadeInterval;
 //
-//// settings
+
+//const int MAX_BRIGHTNESS = 255;
+//const int MIN_BRIGHTNESS = 0;
+//const int MAX_ACTION = 4;
+//const int MIN_ACTION = 0;
+
+//
+//// timing
+
+//unsigned long previousBlinkColorMicros;
+//unsigned long previousFadeBrightnessMicros;
+//unsigned long previousFadeColorMicros;
+//unsigned long previousResetMicros;
+//
+//// variables
+//bool lightColorState;	// TRUE = WHITE; FALSE = COLOR
+//int lightBrightness;	// 255 = ON; 0 = OFF
 //int action;
-//int delay1;
-//int delay2;
-//bool powerState;
-//bool colorState;
-//int brightness;
+//unsigned long delay1;
+//unsigned long delay2;
+//unsigned long colorChanageInterval;
+//unsigned long fadeColorInterval;
 //bool fadeUp;
+//unsigned long tempFadeColorInterval;
 //
-//// the setup function runs once when you press reset or power the board
-//void setup() {
+//void setup()
+//{
+
 //
-//	// set settings to startup values (maybe read from eeprom)
-//	action = 1;
-//	delay1 = 1000;
-//	delay2 = 1000;
-//	powerState = true;
-//	colorState = true;
-//	brightness = 255;
+
+//
+//	// setup variables
+
+//	previousBlinkColorMicros = 0;
+//	previousFadeBrightnessMicros = 0;
+//	previousFadeColorMicros = 0;
+//
+//	// load from eeprom?
+//	lightColorState = true;
+//	lightBrightness = 255;
+//	action = -1;
+//	delay1 = 1000L * 1000L;
+//	delay2 = 1000L * 1000L;
+//	colorChanageInterval = delay1;
+//	fadeColorInterval = delay1;
 //	fadeUp = true;
-//
-//	powerInterval = delay1;
-//	colorInterval = delay1;
-//	fadeInterval = 60;
+//	tempFadeColorInterval = fadeColorInterval;
 //}
 //
-//// the loop function runs over and over again until power down or reset
-//void loop() {
+//void loop()
+//{
 //	checkSerial();
 //
-//	currentMicros = micros();
-//	setAction();
-//
-//	setLightBrightness(brightness);
-//	setLightColor(colorState);	
-//}
 
-//d11000; d21000; ac1
+//	setAction();
+//	setLightBrightness(lightBrightness);
+//	setLightColor(lightColorState);
 //
-//d10; d210; ac3; fa1000
+//	if (DEBUG)
+//	{
+//		debugInfo();
+//	}
+//}
 //
-//d11.5; d20; ac2; fc1.5
+//void checkSerial() 
+//{
+//	String data = "";
+//	while (Serial.available() > 0)
+//	{
+//		data += Serial.readString();
+//		if (data.endsWith("\n"))
+//		{
+//			data.replace("\n", "");
+//			splitSerialData(data);
+//		}
+//	}
+//}
 //
-//d11000000; d21000000; ac0
+//void splitSerialData(String data)
+//{
+//	String tempData = data;
+//	tempData.trim();
+//	while (tempData.length() > 0)
+//	{
+//		int index = tempData.indexOf(";");
+//		String subString = "";
+//		if (index == 0 || index == -1)
+//		{			
+//			subString = tempData.substring(0);
+//		}
+//		else
+//		{
+//			subString = tempData.substring(0, index + 1);
+//		}
+//		tempData.replace(subString, "");
+//		parseSerialData(subString);
+//	}
+//}
+//
+//void parseSerialData(String data)
+//{
+//	if (data.substring(0, 2) == "ac")
+//	{
+//		int a = atoi(data.substring(2).c_str());
+//		action = a;
+//	}
+//	else if (data.substring(0, 2) == "d1")
+//	{
+//		float f = data.substring(2).toFloat();
+//		delay1 = f * 1000L;
+//	}
+//	else if (data.substring(0, 2) == "d2")
+//	{
+//		float f = data.substring(2).toFloat();
+//		delay2 = f * 1000L;
+//	}
+//	else if (data.substring(0, 2) == "fc")
+//	{
+//		float f = data.substring(2).toFloat();
+//		fadeColorInterval = f * 1000L;
+//		tempFadeColorInterval = fadeColorInterval;
+//	}
+//	else if (data.substring(0, 2) == "br")
+//	{
+//		int a = atoi(data.substring(2).c_str());
+//		lightBrightness = a;
+//	}
+////	else if (data.substring(0, 2) == "dd") {
+////		int d = atoi(data.substring(2).c_str());
+////		delay1 = d;
+////		delay2 = d;
+////	}
+////	else if (data.substring(0, 2) == "ac") {
+////		int a = atoi(data.substring(2).c_str());
+////		if (a == 3)
+////		{
+////			delay1 = 2000;
+////			delay2 = 0;
+////		}
+////		action = a;
+////	}
+////	
+////	else if (data.substring(0, 2) == "pw") {
+////		int a = atoi(data.substring(2).c_str());
+////		powerState = a;
+////	}
+//	
+////	else if (data.substring(0, 2) == "cl") {
+////		int a = atoi(data.substring(2).c_str());
+////		colorState = a;
+////	}
+//}
+//
+//void setAction()
+//{
+//	switch (action)
+//	{
+//		case 0:
+//			blinkLightColor();
+//			break;
+//
+//		case 1:
+//			fadeBrightness();
+//			break;
+//
+//		case 2:
+//			blinkLightColor();
+//			fadeColor();
+//			break;
+//
+//		case 3:
+//			fadeColorReset();
+//			break;
+//
+//		default:
+//			break;
+//	}
+//}
+//
+//void blinkLightColor()
+//{
+//	if (currentMicros - previousBlinkColorMicros >= colorChanageInterval)
+//	{
+//		lightColorState = !lightColorState;
+//
+//		if (lightColorState)
+//		{
+//			colorChanageInterval = delay1;
+//		}
+//		else
+//		{
+//			colorChanageInterval = delay2;
+//		}
+//
+//		previousBlinkColorMicros = micros();
+//	}
+//}
+//
+//void fadeBrightness()
+//{
+////	if (currentMicros - previousMillis >= fadeInterval) {
+////
+////		if (fadeUp) {
+////			brightness++;
+////			if (brightness >= MAX_BRIGHTNESS) {
+////				fadeUp = !fadeUp;
+////			}
+////			
+////		} else {
+////			brightness--;
+////			if (brightness <= MIN_BRIGHTNESS) {
+////				fadeUp = !fadeUp;
+////			}
+////		}
+////
+////		previousMillis = millis();
+////	}
+//}
+//
+//void fadeColor()
+//{
+//	if (currentMicros - previousFadeColorMicros >= fadeColorInterval)
+//	{
+//		if (fadeUp)
+//		{
+//			delay1--;
+//			delay2++;
+//			/*if ((delay2 / tempFadeColorInterval) * 100 > 50)
+//			{
+//				fadeColorInterval += 1;
+//			}*/
+//			if (delay1 <= 0)
+//			{
+//				//fadeUp = !fadeUp;
+//				previousResetMicros = micros();
+//				action = 3;
+//				//fadeColorInterval = tempFadeColorInterval;
+//			}
+//		}
+//		else
+//		{
+//			delay1++;
+//			delay2--;
+//			/*if ((delay1 / tempFadeColorInterval) * 100 > 50)
+//			{
+//				fadeColorInterval += 1;
+//			}*/
+//			if (delay2 <= 0)
+//			{
+//				//fadeUp = !fadeUp;
+//				previousResetMicros = micros();
+//				action = 3;
+//				//fadeColorInterval = tempFadeColorInterval;
+//			}
+//		}
+//		previousFadeColorMicros = micros();
+//	}
+//}
+//
+//void fadeColorReset()
+//{
+//	if (currentMicros - previousResetMicros >= 5000000L)
+//	{
+//		fadeUp = !fadeUp;
+//		action = 2;
+//	}
+//}
+//
+
+//
+
+//
+//void debugInfo()
+//{
+
+//}
+//
+//
+//
+//
+//
+//
+//
+////int colorInterval;
+////int fadeInterval;
+////
+////// settings
+////int action;
+////int delay1;
+////int delay2;
+////bool powerState;
+////bool colorState;
+////int brightness;
+////bool fadeUp;
+////
+////// the setup function runs once when you press reset or power the board
+////void setup() {
+////
+////	// set settings to startup values (maybe read from eeprom)
+////	action = 1;
+////	delay1 = 1000;
+////	delay2 = 1000;
+////	powerState = true;
+////	colorState = true;
+////	brightness = 255;
+////	fadeUp = true;
+////
+////	powerInterval = delay1;
+////	colorInterval = delay1;
+////	fadeInterval = 60;
+////}
+////
+////// the loop function runs over and over again until power down or reset
+////void loop() {
+////	checkSerial();
+////
+////	currentMicros = micros();
+////	setAction();
+////
+////	setLightBrightness(brightness);
+////	setLightColor(colorState);	
+////}
+//
+////d11000; d21000; ac1
+////
+////d10; d210; ac3; fa1000
+////
+////d11.5; d20; ac2; fc1.5
+////
+////d11000000; d21000000; ac0
