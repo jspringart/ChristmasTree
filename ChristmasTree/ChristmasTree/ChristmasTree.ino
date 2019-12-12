@@ -22,6 +22,8 @@ int lightsPinEnable = 6;
 unsigned long currentMicros;
 unsigned long previousDebugMicros;
 double debugInterval;
+unsigned long previousShowMicros;
+double showInterval;
 
 // leds
 bool lightsOn = true;
@@ -37,6 +39,8 @@ void setup() {
 	currentMicros = 0;
 	previousDebugMicros = 0;
 	debugInterval = 1; // in seconds
+	previousShowMicros = 0;
+	showInterval = 5;
 
 	// start serial
 	Serial.begin(9600);
@@ -119,6 +123,15 @@ void setLightColor(lightcolor lights) {
 void enableLights(bool value)
 {
 	digitalWrite(lightsPinEnable, value);
+}
+
+void show() {
+	if ((currentMicros - previousShowMicros >= (showInterval * 1000000L))) {
+		
+		ledColor = (lightcolor)(ledColor + 1);
+
+		previousShowMicros = micros();
+	}
 }
 
 
