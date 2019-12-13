@@ -103,17 +103,17 @@ void parseSerialData(String data)
 		switch (action)
 		{
 		case 0:
-			Timer1.detachInterrupt();
-			Timer1.attachInterrupt(seqFade);
+			//Timer1.detachInterrupt();
+			//Timer1.attachInterrupt(seqFade);
 			break;
 		case 1:
-			Timer1.detachInterrupt();
-			Timer1.attachInterrupt(fadeIntoBlack);
+			//Timer1.detachInterrupt();
+			//Timer1.attachInterrupt(fadeIntoBlack);
 			break;
 
 		case 2:
-			Timer1.detachInterrupt();
-			Timer1.attachInterrupt(on);
+			//Timer1.detachInterrupt();
+			//Timer1.attachInterrupt(on);
 			break;
 		}
 	}
