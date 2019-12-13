@@ -7,27 +7,70 @@
 #include <TimerOne.h>
 
 unsigned int duty = 0;
+bool value = true;
+int delay1 = 0;
+int delay2 = 2500;
+int pin = 13;
 
 void setup() {
-	pinMode(10, OUTPUT);
-	Timer1.initialize(500000);
-	Timer1.pwm(10, duty);
+	pinMode(13, OUTPUT);
+	pinMode(12, OUTPUT);
+	Timer1.initialize(2500);
+	Timer1.pwm(10, 1024);
 	Timer1.attachInterrupt(callback);
+
+	digitalWrite(12, LOW);
 }
 
 void loop() {
-
+	digitalWrite(12, LOW);
+	digitalWrite(13, LOW);
 }
 
 void callback()
 {
-	if (duty = 1024) {
-		duty = 0;
+	if (delay1 == 2500)
+	{
+		Timer1.detachInterrupt();
+		Timer1.attachInterrupt(callback2);
+		delay1 = 0;
+		delay2 = 2500;
 	}
-	else {
-		duty++;
+	else
+	{
+		delay1++;
+		delay2--;
 	}
-	Timer1.setPwmDuty(duty);
+	
+	digitalWrite(13, value);
+	delayMicroseconds(delay1);
+	digitalWrite(13, !value);
+	delayMicroseconds(delay2);
+
+	//value = !value;
+}
+
+void callback2()
+{
+	if (delay1 == 2500)
+	{
+		Timer1.detachInterrupt();
+		Timer1.attachInterrupt(callback);
+		delay1 = 0;
+		delay2 = 2500;
+	}
+	else
+	{
+		delay1++;
+		delay2--;
+	}
+
+	digitalWrite(12, value);
+	delayMicroseconds(delay1);
+	digitalWrite(12, !value);
+	delayMicroseconds(delay2);
+
+	//value = !value;
 }
 //enum lightcolor {
 //	WHITE,
