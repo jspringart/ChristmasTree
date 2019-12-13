@@ -7,7 +7,7 @@
 #include <TimerOne.h>
 
 const bool DEBUG = true;
-const int MAX_PERIOD = 2525;
+const int MAX_PERIOD = 2560;
 const int MIN_PERIOD = 0;
 
 // pin mapping
@@ -22,6 +22,7 @@ int duty = 2048;
 bool fadeUp = true;
 int pauseCount = 0;
 int pin = lightsPinA;
+bool pauseBit = false;
 
 void setup() {
 	pinMode(lightsPinA, OUTPUT);
@@ -32,7 +33,7 @@ void setup() {
 	Serial.begin(9600);
 
 	digitalWrite(lightsPinA, LOW);
-	digitalWrite(lightsPinB, LOW);
+	digitalWrite(lightsPinB, HIGH);
 	digitalWrite(lightsPinEnable, HIGH);
 
 	// setup variables
@@ -77,32 +78,65 @@ void testHIGH() {
 void testLOW() {
 	if (fadeUp)
 	{
-		offDelay--;
-		onDelay++;
-		if (offDelay <= 25)
+		if (!pauseBit)
 		{
-			//Timer1.stop();
-			digitalWrite(pin, HIGH);
-			//Timer1.detachInterrupt();
-			Timer1.setPeriod(500000);
-			Timer1.attachInterrupt(pause);
-			fadeUp = false;
-			return;
+			offDelay--;
+			onDelay++;
+			if (offDelay == 50)
+			{
+				//Timer1.stop();
+				//digitalWrite(pin, HIGH);
+				//Timer1.detachInterrupt();
+				//digitalWrite(lightsPinA, (bool)digitalRead(lightsPinA));
+				//digitalWrite(lightsPinB, (bool)digitalRead(lightsPinB));
+				//Timer1.setPeriod(500000);
+				//Timer1.attachInterrupt(pause);
+				fadeUp = false;
+				pauseBit = true;
+				return;
+				
+			}
 		}
+		if (pauseBit)
+		{
+			pauseCount++;
+		}
+
+		if (pauseCount >= 1000)
+		{
+			pauseBit = false;
+			pauseCount = 0;
+		}
+		
 	}
 	else 
 	{
-		offDelay++;
-		onDelay--;
-		if (onDelay <= 25)
+		if (!pauseBit)
 		{
-			//Timer1.stop();
-			digitalWrite(pin, LOW);
-			//Timer1.detachInterrupt();
-			Timer1.setPeriod(500000);			
-			Timer1.attachInterrupt(pause);
-			fadeUp = true;
-			return;
+			offDelay++;
+			onDelay--;
+			if (onDelay == 50)
+			{
+				//Timer1.stop();
+				//digitalWrite(lightsPinA, (bool)digitalRead(lightsPinA));
+				//digitalWrite(lightsPinB, (bool)digitalRead(lightsPinB));
+				//Timer1.detachInterrupt();
+				//Timer1.setPeriod(500000);			
+				//Timer1.attachInterrupt(pause);
+				fadeUp = true;
+				pauseBit = true;
+				return;
+			}
+		}
+		if (pauseBit)
+		{
+			pauseCount++;
+		}
+
+		if (pauseCount >= 2000)
+		{
+			pauseBit = false;
+			pauseCount = 0;
 		}
 	}
 
@@ -115,12 +149,18 @@ void testLOW() {
 		Timer1.setPeriod(onDelay);
 	}
 
-	digitalWrite(pin, !(bool)digitalRead(pin));
+	// show
+	//digitalWrite(pin, !(bool)digitalRead(pin));
+	digitalWrite(lightsPinA, !(bool)digitalRead(lightsPinA));
+	digitalWrite(lightsPinB, !(bool)digitalRead(lightsPinB));
 }
 
 void pause() {
+	//digitalWrite(lightsPinA, LOW);
+	//digitalWrite(lightsPinB, LOW);
+	//show
 	pauseCount++;
-	if (pauseCount == 2) {
+	/*if (pauseCount == 2) {
 		pauseCount = 0;
 		if (pin == lightsPinA) {
 			pin = lightsPinB;
@@ -130,19 +170,26 @@ void pause() {
 			pin = lightsPinA;
 		}
 		
-	}
+	}*/
 	
 	//Timer1.detachInterrupt();
 	if (fadeUp)
 	{
-		Timer1.setPeriod(offDelay);
+		Timer1.setPeriod(onDelay);
 	}
 	else
 	{
-		Timer1.setPeriod(onDelay);
+		Timer1.setPeriod(offDelay);
 	}
+
+	digitalWrite(lightsPinA, !(bool)digitalRead(lightsPinA));
+	digitalWrite(lightsPinB, !(bool)digitalRead(lightsPinB));
 	
-	Timer1.attachInterrupt(testLOW);
+	if (pauseCount == 10000)
+	{
+		pauseCount = 0;
+		Timer1.attachInterrupt(testLOW);
+	}	
 }
 
 void displayDebugInfo() {
