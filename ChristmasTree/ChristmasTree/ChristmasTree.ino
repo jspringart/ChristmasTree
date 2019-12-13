@@ -6,11 +6,16 @@
 
 #include <TimerOne.h>
 
+const bool DEBUG = true;
+
 // pin mapping
 int lightsPinA = 13;
 int lightsPinB = 12;
 int lightsPinEnable = 6;
 
+unsigned long currentMicros;
+unsigned long previousDebugMicros;
+double debugInterval;
 unsigned long period = 2000;
 unsigned int duty = 1024;
 
@@ -18,23 +23,37 @@ bool fadeUp = true;
 int delay1 = 0;
 int delay2 = period;
 int pin = lightsPinA;
+int action = 0;
 
 void setup() {
 	pinMode(lightsPinA, OUTPUT);
 	pinMode(lightsPinB, OUTPUT);
 	pinMode(lightsPinEnable, OUTPUT);
 
+	// start serial
+	Serial.begin(9600);
+
+	// setup variables
 	Timer1.initialize(period);
 	Timer1.pwm(10, duty);
-	Timer1.attachInterrupt(seqFade);
+	Timer1.attachInterrupt(fadeIntoBlack);
 
 	digitalWrite(lightsPinA, LOW);
 	digitalWrite(lightsPinB, LOW);
 	digitalWrite(lightsPinEnable, HIGH);
+
+	currentMicros = 0;
+	previousDebugMicros = 0;
+	debugInterval = 1; // in seconds
 }
 
 void loop() {
+	currentMicros = micros();
 	checkSerial();
+
+	if (DEBUG) {
+		displayDebugInfo();
+	}
 }
 
 void checkSerial() 
@@ -75,7 +94,7 @@ void splitSerialData(String data)
 void parseSerialData(String data)
 {
 	if (data.substring(0, 2) == "sh") {
-		int action = atoi(data.substring(2).c_str());
+		action = atoi(data.substring(2).c_str());
 		switch (action)
 		{
 		case 0:
@@ -85,6 +104,11 @@ void parseSerialData(String data)
 		case 1:
 			Timer1.detachInterrupt();
 			Timer1.attachInterrupt(fadeIntoBlack);
+			break;
+
+		case 2:
+			Timer1.detachInterrupt();
+			Timer1.attachInterrupt(on);
 			break;
 		}
 	}
@@ -138,6 +162,21 @@ void parseSerialData(String data)
 		int a = atoi(data.substring(2).c_str());
 		colorState = a;
 	}*/
+}
+
+void displayDebugInfo() {
+	if ((currentMicros - previousDebugMicros >= (debugInterval * 1000000L))) {
+		String debugInfo = "DEBUG: ";
+
+		debugInfo += "IVAL=" + String(debugInterval) + " ";
+		debugInfo += "SHOW=" + String(action) + " ";
+		debugInfo += "DELA1=" + String(delay1) + " ";
+		debugInfo += "DELA2=" + String(delay2) + " ";
+
+		Serial.println(debugInfo);
+
+		previousDebugMicros = micros();
+	}
 }
 
 void seqFade()
@@ -196,12 +235,18 @@ void fadeIntoBlack()
 		fadeUp = true;
 	}
 
+	digitalWrite(lightsPinA, !(bool)digitalRead(lightsPinA));
+	digitalWrite(lightsPinB, !(bool)digitalRead(lightsPinB));
+	delayMicroseconds(delay1);
+	digitalWrite(lightsPinA, !(bool)digitalRead(lightsPinA));
+	digitalWrite(lightsPinB, !(bool)digitalRead(lightsPinB));
+	delayMicroseconds(delay2);
+}
+
+void on()
+{	
 	digitalWrite(lightsPinA, HIGH);
 	digitalWrite(lightsPinB, LOW);
-	delayMicroseconds(delay1);
-	digitalWrite(lightsPinA, LOW);
-	digitalWrite(lightsPinA, HIGH);
-	delayMicroseconds(delay2);
 }
 
 //enum lightcolor {
@@ -211,14 +256,12 @@ void fadeIntoBlack()
 //};
 //void setLightColor(lightcolor lights);
 //
-//const bool DEBUG = true;
+
 //
 
 //
 //// timing
-//unsigned long currentMicros;
-//unsigned long previousDebugMicros;
-//double debugInterval;
+
 //unsigned long previousShowMicros;
 //double showInterval;
 //
@@ -238,17 +281,13 @@ void fadeIntoBlack()
 //	pinMode(lightsPinB, OUTPUT);
 //	pinMode(lightsPinEnable, OUTPUT);
 //
-//	// setup variables
-//	currentMicros = 0;
-//	previousDebugMicros = 0;
-//	debugInterval = 1; // in seconds
+
 //	previousShowMicros = 0;
 //	showInterval = 100000;
 //
 //	randomSeed(analogRead(0));
 //
-//	// start serial
-//	Serial.begin(9600);
+//	
 //
 //	// initalize lights
 //	enableLights(lightsOn);
@@ -258,33 +297,17 @@ void fadeIntoBlack()
 //}
 //
 //void loop() {
-//	currentMicros = micros();
+//	
 //	analogWrite(lightsPinA, 255);
 //	/*showNumber = random(3);
 //
 //	setLightColor(ledColor);
 //	show2();*/
 //	
-//	if (DEBUG) {
-//		displayDebugInfo();
-//	}
+
 //}
 //
-//void displayDebugInfo() {
-//	if ((currentMicros - previousDebugMicros >= (debugInterval * 1000000L))) {
-//		String debugInfo = "DEBUG: ";
-//
-//		debugInfo += "IVAL=" + String(debugInterval) + " ";
-//		debugInfo += "ENAB=" + getLightStatus() + " ";
-//		debugInfo += "COLO=" + getLightColor() + " ";
-//		debugInfo += "DELA1=" + String(delay1) + " ";
-//		debugInfo += "DELA2=" + String(delay2) + " ";
-//
-//		Serial.println(debugInfo);
-//
-//		previousDebugMicros = micros();
-//	}
-//}
+
 //
 //String getLightColor() {
 //	switch (ledColor)
