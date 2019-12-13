@@ -26,8 +26,7 @@ void setup() {
 
 	Timer1.initialize(period);
 	Timer1.pwm(10, duty);
-	Timer1.attachInterrupt(callback);
-	Timer1.attachInterrupt(callback2);
+	Timer1.attachInterrupt(seqFade);
 
 	digitalWrite(lightsPinA, LOW);
 	digitalWrite(lightsPinB, LOW);
@@ -35,9 +34,113 @@ void setup() {
 }
 
 void loop() {
+	checkSerial();
 }
 
-void callback()
+void checkSerial() 
+{
+	String data = "";
+	while (Serial.available() > 0)
+	{
+		data += Serial.readString();
+		if (data.endsWith("\n"))
+		{
+			data.replace("\n", "");
+			splitSerialData(data);
+		}
+	}
+}
+
+void splitSerialData(String data)
+{
+	String tempData = data;
+	tempData.trim();
+	while (tempData.length() > 0)
+	{
+		int index = tempData.indexOf(";");
+		String subString = "";
+		if (index == 0 || index == -1)
+		{			
+			subString = tempData.substring(0);
+		}
+		else
+		{
+			subString = tempData.substring(0, index + 1);
+		}
+		tempData.replace(subString, "");
+		parseSerialData(subString);
+	}
+}
+
+void parseSerialData(String data)
+{
+	if (data.substring(0, 2) == "sh") {
+		int action = atoi(data.substring(2).c_str());
+		switch (action)
+		{
+		case 0:
+			Timer1.detachInterrupt();
+			Timer1.attachInterrupt(seqFade);
+			break;
+		case 1:
+			Timer1.detachInterrupt();
+			Timer1.attachInterrupt(fadeIntoBlack);
+			break;
+		}
+	}
+	/*if (data.substring(0, 2) == "ac")
+	{
+		int a = atoi(data.substring(2).c_str());
+		action = a;
+	}
+	else if (data.substring(0, 2) == "d1")
+	{
+		float f = data.substring(2).toFloat();
+		delay1 = f * 1000L;
+	}
+	else if (data.substring(0, 2) == "d2")
+	{
+		float f = data.substring(2).toFloat();
+		delay2 = f * 1000L;
+	}
+	else if (data.substring(0, 2) == "fc")
+	{
+		float f = data.substring(2).toFloat();
+		fadeColorInterval = f * 1000L;
+		tempFadeColorInterval = fadeColorInterval;
+	}
+	else if (data.substring(0, 2) == "br")
+	{
+		int a = atoi(data.substring(2).c_str());
+		lightBrightness = a;
+	}
+	else if (data.substring(0, 2) == "dd") {
+		int d = atoi(data.substring(2).c_str());
+		delay1 = d;
+		delay2 = d;
+	}
+	else if (data.substring(0, 2) == "ac") {
+		int a = atoi(data.substring(2).c_str());
+		if (a == 3)
+		{
+			delay1 = 2000;
+			delay2 = 0;
+		}
+		action = a;
+	}
+	
+	else if (data.substring(0, 2) == "pw") {
+		int a = atoi(data.substring(2).c_str());
+		powerState = a;
+	}
+	
+	else if (data.substring(0, 2) == "cl") {
+		int a = atoi(data.substring(2).c_str());
+		colorState = a;
+	}*/
+}
+
+void seqFade()
 {
 	if (fadeUp)
 	{
@@ -65,13 +168,13 @@ void callback()
 		}
 	}
 	
-	digitalWrite(13, HIGH);
+	digitalWrite(pin, HIGH);
 	delayMicroseconds(delay1);
-	digitalWrite(13, LOW);
+	digitalWrite(pin, LOW);
 	delayMicroseconds(delay2);
 }
 
-void callback2()
+void fadeIntoBlack()
 {
 	if (fadeUp)
 	{
@@ -91,17 +194,13 @@ void callback2()
 	else if (delay1 == 0)
 	{
 		fadeUp = true;
-		if (pin == lightsPinA) {
-			pin = lightsPinB;
-		}
-		else {
-			pin = lightsPinA;
-		}
 	}
 
-	digitalWrite(12, HIGH);
+	digitalWrite(lightsPinA, HIGH);
+	digitalWrite(lightsPinB, LOW);
 	delayMicroseconds(delay1);
-	digitalWrite(12, LOW);
+	digitalWrite(lightsPinA, LOW);
+	digitalWrite(lightsPinA, HIGH);
 	delayMicroseconds(delay2);
 }
 
@@ -351,94 +450,11 @@ void callback2()
 ////	}
 ////}
 ////
-////void checkSerial() 
-////{
-////	String data = "";
-////	while (Serial.available() > 0)
-////	{
-////		data += Serial.readString();
-////		if (data.endsWith("\n"))
-////		{
-////			data.replace("\n", "");
-////			splitSerialData(data);
-////		}
-////	}
-////}
+
 ////
-////void splitSerialData(String data)
-////{
-////	String tempData = data;
-////	tempData.trim();
-////	while (tempData.length() > 0)
-////	{
-////		int index = tempData.indexOf(";");
-////		String subString = "";
-////		if (index == 0 || index == -1)
-////		{			
-////			subString = tempData.substring(0);
-////		}
-////		else
-////		{
-////			subString = tempData.substring(0, index + 1);
-////		}
-////		tempData.replace(subString, "");
-////		parseSerialData(subString);
-////	}
-////}
+
 ////
-////void parseSerialData(String data)
-////{
-////	if (data.substring(0, 2) == "ac")
-////	{
-////		int a = atoi(data.substring(2).c_str());
-////		action = a;
-////	}
-////	else if (data.substring(0, 2) == "d1")
-////	{
-////		float f = data.substring(2).toFloat();
-////		delay1 = f * 1000L;
-////	}
-////	else if (data.substring(0, 2) == "d2")
-////	{
-////		float f = data.substring(2).toFloat();
-////		delay2 = f * 1000L;
-////	}
-////	else if (data.substring(0, 2) == "fc")
-////	{
-////		float f = data.substring(2).toFloat();
-////		fadeColorInterval = f * 1000L;
-////		tempFadeColorInterval = fadeColorInterval;
-////	}
-////	else if (data.substring(0, 2) == "br")
-////	{
-////		int a = atoi(data.substring(2).c_str());
-////		lightBrightness = a;
-////	}
-//////	else if (data.substring(0, 2) == "dd") {
-//////		int d = atoi(data.substring(2).c_str());
-//////		delay1 = d;
-//////		delay2 = d;
-//////	}
-//////	else if (data.substring(0, 2) == "ac") {
-//////		int a = atoi(data.substring(2).c_str());
-//////		if (a == 3)
-//////		{
-//////			delay1 = 2000;
-//////			delay2 = 0;
-//////		}
-//////		action = a;
-//////	}
-//////	
-//////	else if (data.substring(0, 2) == "pw") {
-//////		int a = atoi(data.substring(2).c_str());
-//////		powerState = a;
-//////	}
-////	
-//////	else if (data.substring(0, 2) == "cl") {
-//////		int a = atoi(data.substring(2).c_str());
-//////		colorState = a;
-//////	}
-////}
+
 ////
 ////void setAction()
 ////{
@@ -553,23 +569,7 @@ void callback2()
 ////		fadeUp = !fadeUp;
 ////		action = 2;
 ////	}
-////}
-////
-//
-////
-//
-////
-////void debugInfo()
-////{
-//
-////}
-////
-////
-////
-////
-////
-////
-////
+
 //////int colorInterval;
 //////int fadeInterval;
 //////
@@ -609,11 +609,3 @@ void callback2()
 //////	setLightBrightness(brightness);
 //////	setLightColor(colorState);	
 //////}
-////
-//////d11000; d21000; ac1
-//////
-//////d10; d210; ac3; fa1000
-//////
-//////d11.5; d20; ac2; fc1.5
-//////
-//////d11000000; d21000000; ac0
