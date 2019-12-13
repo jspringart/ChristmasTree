@@ -15,6 +15,7 @@ int lightsPinEnable = 6;
 
 unsigned long currentMicros;
 unsigned long previousDebugMicros;
+unsigned long previousTestMicros;
 double debugInterval;
 unsigned long period = 5000;
 unsigned int duty = 2048;
@@ -36,7 +37,7 @@ void setup() {
 	// setup variables
 	Timer1.initialize(period);
 	Timer1.pwm(10, duty);
-	Timer1.attachInterrupt(fadeIntoBlack);
+	Timer1.attachInterrupt(seqFade);
 
 	digitalWrite(lightsPinA, LOW);
 	digitalWrite(lightsPinB, LOW);
@@ -47,8 +48,12 @@ void setup() {
 	debugInterval = 1; // in seconds
 }
 
+unsigned long currentFadeMicros = 0;
+unsigned long previousFadeMicros = 0;
+
 void loop() {
 	currentMicros = micros();
+	currentFadeMicros = micros();
 	checkSerial();
 
 	if (DEBUG) {
@@ -179,6 +184,55 @@ void displayDebugInfo() {
 	}
 }
 
+
+
+void test() {
+	
+	if (currentMicros - previousTestMicros >= 5000L) {	
+		if (fadeUp)
+		{
+			delay1++;
+			delay2--;
+		}
+		else if (!fadeUp)
+		{
+			delay1--;
+			delay2++;
+		}
+		if (delay1 == period)
+		{
+			fadeUp = false;
+			//delayMicroseconds(1000000);
+		}
+		else if (delay1 == 0)
+		{
+			fadeUp = true;
+			//delayMicroseconds(1000000);
+		}
+
+		if (currentFadeMicros - previousFadeMicros >= delay1) {
+			digitalWrite(lightsPinA, !(bool)digitalRead(lightsPinA));
+			digitalWrite(lightsPinB, !(bool)digitalRead(lightsPinB));
+			previousFadeMicros = micros();
+		}
+
+		//after delay2 turn hight
+		if (currentFadeMicros - previousFadeMicros >= delay2) {
+			digitalWrite(lightsPinA, HIGH);
+			digitalWrite(lightsPinB, LOW);
+			previousFadeMicros = micros();
+		}
+
+		/*digitalWrite(lightsPinA, HIGH);
+		digitalWrite(lightsPinB, LOW);
+		delayMicroseconds(delay1);
+		digitalWrite(lightsPinA, !(bool)digitalRead(lightsPinA));
+		digitalWrite(lightsPinB, !(bool)digitalRead(lightsPinB));
+		delayMicroseconds(delay2);
+	}*/
+	}
+}
+
 void seqFade()
 {
 	if (fadeUp)
@@ -206,11 +260,20 @@ void seqFade()
 			pin = lightsPinA;
 		}
 	}
-	
-	digitalWrite(pin, HIGH);
-	delayMicroseconds(delay1);
+
+	if (currentMicros - previousFadeMicros >= delay1) {
+		digitalWrite(pin, LOW);
+	}
+
+	if (currentMicros - previousFadeMicros >= delay1) {
+		digitalWrite(pin, HIGH);
+	}
+
+	previousFadeMicros = micros();
+
+	/*delayMicroseconds(delay1);
 	digitalWrite(pin, LOW);
-	delayMicroseconds(delay2);
+	delayMicroseconds(delay2);*/
 }
 
 void fadeIntoBlack()
