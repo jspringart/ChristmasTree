@@ -11,7 +11,7 @@ int lightsPinA = 13;
 int lightsPinB = 12;
 int lightsPinEnable = 6;
 
-unsigned long period = 2500;
+unsigned long period = 2000;
 unsigned int duty = 1024;
 
 bool fadeUp = true;
@@ -27,6 +27,7 @@ void setup() {
 	Timer1.initialize(period);
 	Timer1.pwm(10, duty);
 	Timer1.attachInterrupt(callback);
+	Timer1.attachInterrupt(callback2);
 
 	digitalWrite(lightsPinA, LOW);
 	digitalWrite(lightsPinB, LOW);
@@ -51,21 +52,56 @@ void callback()
 	if (delay1 == period)
 	{
 		fadeUp = false;
-		if (pin = lightsPinA) {
+		
+	}
+	else if(delay1 == 0)
+	{
+		fadeUp = true;
+		if (pin == lightsPinA) {
 			pin = lightsPinB;
 		}
 		else {
 			pin = lightsPinA;
 		}
 	}
-	else if(delay1 == 0)
+	
+	digitalWrite(13, HIGH);
+	delayMicroseconds(delay1);
+	digitalWrite(13, LOW);
+	delayMicroseconds(delay2);
+}
+
+void callback2()
+{
+	if (fadeUp)
+	{
+		delay1++;
+		delay2--;
+	}
+	else if (!fadeUp)
+	{
+		delay1--;
+		delay2++;
+	}
+	if (delay1 == period)
+	{
+		fadeUp = false;
+
+	}
+	else if (delay1 == 0)
 	{
 		fadeUp = true;
+		if (pin == lightsPinA) {
+			pin = lightsPinB;
+		}
+		else {
+			pin = lightsPinA;
+		}
 	}
-	
-	digitalWrite(pin, HIGH);
+
+	digitalWrite(12, HIGH);
 	delayMicroseconds(delay1);
-	digitalWrite(pin, LOW);
+	digitalWrite(12, LOW);
 	delayMicroseconds(delay2);
 }
 
