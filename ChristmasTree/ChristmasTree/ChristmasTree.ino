@@ -16,8 +16,8 @@ int lightsPinEnable = 6;
 unsigned long currentMicros;
 unsigned long previousDebugMicros;
 double debugInterval;
-unsigned long period = 2000;
-unsigned int duty = 1024;
+unsigned long period = 5000;
+unsigned int duty = 2048;
 
 bool fadeUp = true;
 int delay1 = 0;
@@ -228,15 +228,16 @@ void fadeIntoBlack()
 	if (delay1 == period)
 	{
 		fadeUp = false;
-
+		//delayMicroseconds(1000000);
 	}
 	else if (delay1 == 0)
 	{
 		fadeUp = true;
+		//delayMicroseconds(1000000);
 	}
 
-	digitalWrite(lightsPinA, !(bool)digitalRead(lightsPinA));
-	digitalWrite(lightsPinB, !(bool)digitalRead(lightsPinB));
+	digitalWrite(lightsPinA, HIGH);
+	digitalWrite(lightsPinB, LOW);
 	delayMicroseconds(delay1);
 	digitalWrite(lightsPinA, !(bool)digitalRead(lightsPinA));
 	digitalWrite(lightsPinB, !(bool)digitalRead(lightsPinB));
