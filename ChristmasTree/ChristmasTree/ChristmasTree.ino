@@ -6,72 +6,69 @@
 
 #include <TimerOne.h>
 
-unsigned int duty = 0;
-bool value = true;
+// pin mapping
+int lightsPinA = 13;
+int lightsPinB = 12;
+int lightsPinEnable = 6;
+
+unsigned long period = 2500;
+unsigned int duty = 1024;
+
+bool fadeUp = true;
 int delay1 = 0;
-int delay2 = 2500;
-int pin = 13;
+int delay2 = period;
+int pin = lightsPinA;
 
 void setup() {
-	pinMode(13, OUTPUT);
-	pinMode(12, OUTPUT);
-	Timer1.initialize(2500);
-	Timer1.pwm(10, 1024);
+	pinMode(lightsPinA, OUTPUT);
+	pinMode(lightsPinB, OUTPUT);
+	pinMode(lightsPinEnable, OUTPUT);
+
+	Timer1.initialize(period);
+	Timer1.pwm(10, duty);
 	Timer1.attachInterrupt(callback);
 
-	digitalWrite(12, LOW);
+	digitalWrite(lightsPinA, LOW);
+	digitalWrite(lightsPinB, LOW);
+	digitalWrite(lightsPinEnable, HIGH);
 }
 
 void loop() {
-	digitalWrite(12, LOW);
-	digitalWrite(13, LOW);
 }
 
 void callback()
 {
-	if (delay1 == 2500)
-	{
-		Timer1.detachInterrupt();
-		Timer1.attachInterrupt(callback2);
-		delay1 = 0;
-		delay2 = 2500;
-	}
-	else
+	if (fadeUp)
 	{
 		delay1++;
 		delay2--;
+	}
+	else if(!fadeUp)
+	{
+		delay1--;
+		delay2++;
+	}
+	if (delay1 == period)
+	{
+		fadeUp = false;
+		if (pin = lightsPinA) {
+			pin = lightsPinB;
+		}
+		else {
+			pin = lightsPinA;
+		}
+	}
+	else if(delay1 == 0)
+	{
+		fadeUp = true;
 	}
 	
-	digitalWrite(13, value);
+	digitalWrite(pin, HIGH);
 	delayMicroseconds(delay1);
-	digitalWrite(13, !value);
+	digitalWrite(pin, LOW);
 	delayMicroseconds(delay2);
-
-	//value = !value;
 }
 
-void callback2()
-{
-	if (delay1 == 2500)
-	{
-		Timer1.detachInterrupt();
-		Timer1.attachInterrupt(callback);
-		delay1 = 0;
-		delay2 = 2500;
-	}
-	else
-	{
-		delay1++;
-		delay2--;
-	}
-
-	digitalWrite(12, value);
-	delayMicroseconds(delay1);
-	digitalWrite(12, !value);
-	delayMicroseconds(delay2);
-
-	//value = !value;
-}
 //enum lightcolor {
 //	WHITE,
 //	MULTI,
@@ -81,10 +78,7 @@ void callback2()
 //
 //const bool DEBUG = true;
 //
-//// pin mapping
-//int lightsPinA = 10;
-//int lightsPinB = 11;
-//int lightsPinEnable = 6;
+
 //
 //// timing
 //unsigned long currentMicros;
