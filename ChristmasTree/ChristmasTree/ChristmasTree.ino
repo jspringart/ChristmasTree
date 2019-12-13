@@ -106,7 +106,7 @@ void testLOW() {
 		}
 	}
 
-	if ((bool)digitalRead(lightsPinA) == true)
+	if ((bool)digitalRead(pin) == true)
 	{
 		Timer1.setPeriod(offDelay);
 	}
@@ -115,7 +115,7 @@ void testLOW() {
 		Timer1.setPeriod(onDelay);
 	}
 
-	digitalWrite(pin, !(bool)digitalRead(lightsPinA));
+	digitalWrite(pin, !(bool)digitalRead(pin));
 }
 
 void pause() {
