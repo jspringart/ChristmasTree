@@ -2,27 +2,58 @@
  Name:		ChristmasTree.ino
  Created:	12/28/2018 10:00:54 AM
  Author:	Jason Springart
+ Desc:
+	Mode:
+		  1 - Static
+		  2 - Fade
 */
 
 #include <TimerOne.h>
 
-const bool DEBUG = true;
+enum lightcolor {
+	WHITE,
+	MULTI,
+	BOTH,
+	OFF
+};
+
+enum show {
+	STATIC_WHITE,
+	STATIC_MULTI,
+	FADE_WHITE,
+	FADE_MULTI,
+	FADE_SEQ_BOTH,
+	FADE_BOTH,
+	SHOW_OFF
+};
+
+const bool DEBUG = false;
+const unsigned long STARTUP_DELAY = 5000000;
 const int MAX_PERIOD = 2560;
 const int MIN_PERIOD = 0;
+const int REVERSE_DELAY = 50;
 
 // pin mapping
-int lightsPinA = 13;
-int lightsPinB = 12;
+int lightsPinA = 13; // WHITE
+int lightsPinB = 12; // MULTI
 int lightsPinEnable = 6;
 
-//int period = MAX_PERIOD;
 int onDelay = MIN_PERIOD;
 int offDelay = MAX_PERIOD;
-int duty = 2048;
 bool fadeUp = true;
-int pauseCount = 0;
+int fadeCount = 0; 
+lightcolor color = WHITE;
+bool seqBothColors = false;
 int pin = lightsPinA;
+
+// pause
 bool pauseBit = false;
+int pauseCount = 0;
+int pauseUp = 1000;
+int pauseDown = 2000;
+
+// show
+show action = STATIC_WHITE;
 
 void setup() {
 	pinMode(lightsPinA, OUTPUT);
@@ -33,13 +64,12 @@ void setup() {
 	Serial.begin(9600);
 
 	digitalWrite(lightsPinA, LOW);
-	digitalWrite(lightsPinB, HIGH);
+	digitalWrite(lightsPinB, LOW);
 	digitalWrite(lightsPinEnable, HIGH);
 
 	// setup variables
-	Timer1.initialize(MAX_PERIOD);
-	Timer1.pwm(10, duty);
-	Timer1.attachInterrupt(testLOW);	
+	Timer1.initialize(STARTUP_DELAY);
+	Timer1.attachInterrupt(startup);
 }
 
 void loop() {
@@ -48,95 +78,85 @@ void loop() {
 	}
 }
 
-void testHIGH() {
-	//if (fadeUp)
-	//{
-	//	offDelay--;
-	//	onDelay++;
-	//	if (offDelay == 0)
-	//	{
-	//		fadeUp = false;
-	//	}
-	//}
-	//else
-	//{
-	//	offDelay++;
-	//	onDelay--;
-	//	if (offDelay == MAX_PERIOD)
-	//	{
-	//		fadeUp = true;
-	//	}
-	//}
+void startup() {
+	// Load from eeprom
+	// Select show
+	switch (action)	{
+	case STATIC_WHITE:
+		color = WHITE;
+		seqBothColors = false;
+		Timer1.setPeriod(5000000);
+		Timer1.attachInterrupt(static_color);
+		break;
 
-	//Timer1.detachInterrupt();
-	//Timer1.setPeriod(offDelay);
-	////Timer1.attachInterrupt(testLOW);
+	case STATIC_MULTI:
+		color = MULTI;
+		seqBothColors = false;
+		Timer1.setPeriod(5000000);
+		Timer1.attachInterrupt(static_color);
+		break;
 
-	//digitalWrite(lightsPinA, !(bool)digitalRead(lightsPinA));
+	case FADE_WHITE:
+		color = WHITE;
+		seqBothColors = false;
+		Timer1.setPeriod(offDelay);
+		Timer1.attachInterrupt(fade);
+		break;
+
+	case FADE_MULTI:
+		color = MULTI;
+		seqBothColors = false;
+		Timer1.setPeriod(offDelay);
+		Timer1.attachInterrupt(fade);
+		break;
+
+	case FADE_SEQ_BOTH:
+		color = WHITE;
+		seqBothColors = true;
+		Timer1.setPeriod(offDelay);
+		Timer1.attachInterrupt(fade);
+		break;
+
+	case FADE_BOTH:
+		color = BOTH;
+		seqBothColors = false;
+		Timer1.setPeriod(offDelay);
+		Timer1.attachInterrupt(fade);
+		break;
+	}
 }
 
-void testLOW() {
-	if (fadeUp)
-	{
-		if (!pauseBit)
-		{
+void fade() {
+	if (pauseBit) {
+		pauseCount++;
+		if (fadeUp && (pauseCount >= pauseUp)) {
+			pauseBit = false;
+			pauseCount = 0;
+		}else if (!fadeUp && (pauseCount >= pauseDown)) {
+			pauseBit = false;
+			pauseCount = 0;
+		}
+	}
+	else if (!pauseBit) {
+		if (fadeUp) {
 			offDelay--;
 			onDelay++;
-			if (offDelay == 50)
-			{
-				//Timer1.stop();
-				//digitalWrite(pin, HIGH);
-				//Timer1.detachInterrupt();
-				//digitalWrite(lightsPinA, (bool)digitalRead(lightsPinA));
-				//digitalWrite(lightsPinB, (bool)digitalRead(lightsPinB));
-				//Timer1.setPeriod(500000);
-				//Timer1.attachInterrupt(pause);
+			if (offDelay == REVERSE_DELAY) {
 				fadeUp = false;
 				pauseBit = true;
+				fadeCount++;
 				return;
-				
 			}
 		}
-		if (pauseBit)
-		{
-			pauseCount++;
-		}
-
-		if (pauseCount >= 1000)
-		{
-			pauseBit = false;
-			pauseCount = 0;
-		}
-		
-	}
-	else 
-	{
-		if (!pauseBit)
-		{
+		else {
 			offDelay++;
 			onDelay--;
-			if (onDelay == 50)
-			{
-				//Timer1.stop();
-				//digitalWrite(lightsPinA, (bool)digitalRead(lightsPinA));
-				//digitalWrite(lightsPinB, (bool)digitalRead(lightsPinB));
-				//Timer1.detachInterrupt();
-				//Timer1.setPeriod(500000);			
-				//Timer1.attachInterrupt(pause);
+			if (onDelay == REVERSE_DELAY) {
 				fadeUp = true;
 				pauseBit = true;
+				fadeCount++;
 				return;
 			}
-		}
-		if (pauseBit)
-		{
-			pauseCount++;
-		}
-
-		if (pauseCount >= 2000)
-		{
-			pauseBit = false;
-			pauseCount = 0;
 		}
 	}
 
@@ -149,11 +169,62 @@ void testLOW() {
 		Timer1.setPeriod(onDelay);
 	}
 
-	// show
-	//digitalWrite(pin, !(bool)digitalRead(pin));
-	digitalWrite(lightsPinA, !(bool)digitalRead(lightsPinA));
-	digitalWrite(lightsPinB, !(bool)digitalRead(lightsPinB));
+	if (seqBothColors)
+	{
+		if (fadeCount == 2)
+		{
+			fadeCount = 0;
+			if (pin == lightsPinA) {
+				pin = lightsPinB;
+			}
+			else
+			{
+				pin = lightsPinA;
+			}
+		}
+	}
+
+	// colors
+	if (color == BOTH)	{
+		digitalWrite(lightsPinA, !(bool)digitalRead(lightsPinA));
+		digitalWrite(lightsPinB, !(bool)digitalRead(lightsPinB));
+	} else {
+		digitalWrite(pin, !(bool)digitalRead(pin));
+	}	
 }
+
+void static_color() {
+	switch (color) {
+	case WHITE:
+		digitalWrite(lightsPinA, HIGH);
+		digitalWrite(lightsPinB, LOW);
+		break;
+
+	case MULTI:
+		digitalWrite(lightsPinA, LOW);
+		digitalWrite(lightsPinB, HIGH);
+		break;
+	}
+}
+
+////void setLightColor(lightcolor lights) {
+////
+////	switch (lights)
+////	{
+////	case WHITE:
+////		PORTB = B00010000;
+////		break;
+////	case MULTI:
+////		PORTB = B00100000;
+////		break;
+////	case OFF:
+////		PORTB = B00000000;
+////		PORTB = B00000000;
+////		break;
+////	default:
+////		break;
+////	}
+////}
 
 void pause() {
 	//digitalWrite(lightsPinA, LOW);
@@ -161,14 +232,7 @@ void pause() {
 	//show
 	pauseCount++;
 	/*if (pauseCount == 2) {
-		pauseCount = 0;
-		if (pin == lightsPinA) {
-			pin = lightsPinB;
-		}
-		else
-		{
-			pin = lightsPinA;
-		}
+		
 		
 	}*/
 	
@@ -188,7 +252,7 @@ void pause() {
 	if (pauseCount == 10000)
 	{
 		pauseCount = 0;
-		Timer1.attachInterrupt(testLOW);
+		//Timer1.attachInterrupt(testLOW);
 	}	
 }
 
@@ -512,11 +576,7 @@ void displayDebugInfo() {
 //	digitalWrite(lightsPinB, LOW);
 //}
 //
-////enum lightcolor {
-////	WHITE,
-////	MULTI,
-////	OFF
-////};
+
 ////void setLightColor(lightcolor lights);
 ////
 //
@@ -597,24 +657,7 @@ void displayDebugInfo() {
 ////		return "off";
 ////}
 ////
-////void setLightColor(lightcolor lights) {
-////
-////	switch (lights)
-////	{
-////	case WHITE:
-////		PORTB = B00010000;
-////		break;
-////	case MULTI:
-////		PORTB = B00100000;
-////		break;
-////	case OFF:
-////		PORTB = B00000000;
-////		PORTB = B00000000;
-////		break;
-////	default:
-////		break;
-////	}
-////}
+
 ////
 ////void enableLights(bool value)
 ////{
