@@ -2,10 +2,6 @@
  Name:		ChristmasTree.ino
  Created:	12/28/2018 10:00:54 AM
  Author:	Jason Springart
- Desc:
-	Mode:
-		  1 - Static
-		  2 - Fade
 */
 
 #include <TimerOne.h>
@@ -66,7 +62,7 @@ void setup() {
 
 	// start serial
 	Serial.begin(9600);
-	debugInterval = 0.1;
+	debugInterval = 0.5;
 
 	digitalWrite(lightsPinA, LOW);
 	digitalWrite(lightsPinB, LOW);
@@ -163,56 +159,6 @@ void parseSerialData(String data)
 			break;
 		}
 	}
-	/*if (data.substring(0, 2) == "ac")
-	{
-		int a = atoi(data.substring(2).c_str());
-		action = a;
-	}
-	else if (data.substring(0, 2) == "d1")
-	{
-		float f = data.substring(2).toFloat();
-		delay1 = f * 1000L;
-	}
-	else if (data.substring(0, 2) == "d2")
-	{
-		float f = data.substring(2).toFloat();
-		delay2 = f * 1000L;
-	}
-	else if (data.substring(0, 2) == "fc")
-	{
-		float f = data.substring(2).toFloat();
-		fadeColorInterval = f * 1000L;
-		tempFadeColorInterval = fadeColorInterval;
-	}
-	else if (data.substring(0, 2) == "br")
-	{
-		int a = atoi(data.substring(2).c_str());
-		lightBrightness = a;
-	}
-	else if (data.substring(0, 2) == "dd") {
-		int d = atoi(data.substring(2).c_str());
-		delay1 = d;
-		delay2 = d;
-	}
-	else if (data.substring(0, 2) == "ac") {
-		int a = atoi(data.substring(2).c_str());
-		if (a == 3)
-		{
-			delay1 = 2000;
-			delay2 = 0;
-		}
-		action = a;
-	}
-	
-	else if (data.substring(0, 2) == "pw") {
-		int a = atoi(data.substring(2).c_str());
-		powerState = a;
-	}
-	
-	else if (data.substring(0, 2) == "cl") {
-		int a = atoi(data.substring(2).c_str());
-		colorState = a;
-	}*/
 }
 
 void startup() {
@@ -246,7 +192,6 @@ void startup() {
 	case FADE_MULTI:		
 		color = MULTI;
 		seqBothColors = false;
-		//pin = lightsPinA;
 		static_color();
 		Timer1.setPeriod(offDelay);
 		Timer1.attachInterrupt(fade);
@@ -455,10 +400,7 @@ String getColor() {
 
 
 
-//unsigned long previousTestMicros;
 
-
-//
 
 //int delay1 = 0;
 //int delay2 = period;
@@ -943,31 +885,3 @@ String getColor() {
 ////////bool colorState;
 ////////int brightness;
 ////////bool fadeUp;
-////////
-////////// the setup function runs once when you press reset or power the board
-////////void setup() {
-////////
-////////	// set settings to startup values (maybe read from eeprom)
-////////	action = 1;
-////////	delay1 = 1000;
-////////	delay2 = 1000;
-////////	powerState = true;
-////////	colorState = true;
-////////	brightness = 255;
-////////	fadeUp = true;
-////////
-////////	powerInterval = delay1;
-////////	colorInterval = delay1;
-////////	fadeInterval = 60;
-////////}
-////////
-////////// the loop function runs over and over again until power down or reset
-////////void loop() {
-////////	checkSerial();
-////////
-////////	currentMicros = micros();
-////////	setAction();
-////////
-////////	setLightBrightness(brightness);
-////////	setLightColor(colorState);	
-////////}
