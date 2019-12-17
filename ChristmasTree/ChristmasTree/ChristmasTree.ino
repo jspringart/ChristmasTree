@@ -23,11 +23,11 @@ enum show {
 	SHOW_OFF
 };
 
-const bool DEBUG = true;
+const bool DEBUG = false;
 const unsigned long STARTUP_DELAY = 2500000;
 const int MAX_PERIOD = 2560;
 const int MIN_PERIOD = 0;
-const int REVERSE_DELAY = 50;
+int REVERSE_DELAY = 50;
 
 // pin mapping
 int lightsPinA = 13; // MULTI
@@ -62,7 +62,7 @@ void setup() {
 
 	// start serial
 	Serial.begin(9600);
-	debugInterval = 0.5;
+	debugInterval = 1;
 
 	digitalWrite(lightsPinA, LOW);
 	digitalWrite(lightsPinB, LOW);
@@ -183,6 +183,7 @@ void startup() {
 
 	case FADE_WHITE:
 		color = WHITE;
+		REVERSE_DELAY = 50;
 		seqBothColors = false;
 		static_color();
 		Timer1.setPeriod(offDelay);
@@ -191,6 +192,7 @@ void startup() {
 
 	case FADE_MULTI:		
 		color = MULTI;
+		REVERSE_DELAY = 50;
 		seqBothColors = false;
 		static_color();
 		Timer1.setPeriod(offDelay);
@@ -199,6 +201,7 @@ void startup() {
 
 	case FADE_SEQ_BOTH:
 		color = WHITE;
+		REVERSE_DELAY = 30;
 		seqBothColors = true;
 		pin = lightsPinB;
 		static_color();
@@ -208,6 +211,7 @@ void startup() {
 
 	case FADE_BOTH:
 		color = BOTH;
+		REVERSE_DELAY = 30;
 		seqBothColors = false;
 		static_color();
 		Timer1.setPeriod(offDelay);
@@ -252,6 +256,20 @@ void fade() {
 				return;
 			}
 		}
+	}	
+
+	if (seqBothColors)
+	{
+		if (fadeCount == 2)
+		{
+			fadeCount = 0;
+			if (color == WHITE) {
+				color = MULTI;
+			} else {
+				color = WHITE;
+			}
+			static_color();
+		}
 	}
 
 	if ((bool)digitalRead(pin) == true)
@@ -261,21 +279,6 @@ void fade() {
 	else
 	{
 		Timer1.setPeriod(onDelay);
-	}
-
-	if (seqBothColors)
-	{
-		if (fadeCount == 2)
-		{
-			fadeCount = 0;
-			if (pin == lightsPinA) {
-				pin = lightsPinB;
-			}
-			else
-			{
-				pin = lightsPinA;
-			}
-		}
 	}
 
 	// colors
@@ -312,23 +315,23 @@ void displayDebugInfo() {
 	if ((currentMicros - previousDebugMicros >= (debugInterval * 1000000L))) {
 		String debugInfo = "DEBUG: ";
 
-		/*debugInfo += "DEBUG=" + String(DEBUG) + " ";
-		debugInfo += "STARTDEL=" + String(STARTUP_DELAY) + " ";
-		debugInfo += "MAXPERIOD=" + String(MAX_PERIOD) + " ";
-		debugInfo += "MINPERIOD=" + String(MIN_PERIOD) + " ";
-		debugInfo += "REVERSEDEL=" + String(REVERSE_DELAY) + " ";
+		debugInfo += "DEBUG=" + String(DEBUG) + " ";
+		//debugInfo += "STARTDEL=" + String(STARTUP_DELAY) + " ";
+		//debugInfo += "MAXPERIOD=" + String(MAX_PERIOD) + " ";
+		//debugInfo += "MINPERIOD=" + String(MIN_PERIOD) + " ";
+		//debugInfo += "REVDEL=" + String(REVERSE_DELAY) + " ";
 		debugInfo += "ACTION=" + getAction() + " ";
 		debugInfo += "COLOR=" + getColor() + " ";
-		debugInfo += "SEQBOTHCOLOR=" + String(seqBothColors) + " ";
+		//debugInfo += "SEQBOTHCOLOR=" + String(seqBothColors) + " ";
 		debugInfo += "ONDEL=" + String(onDelay) + " ";
-		debugInfo += "OFFDEL=" + String(offDelay) + " ";*/
-		debugInfo += "FADEUP=" + String(fadeUp) + " ";
-		debugInfo += "FADECNT=" + String(fadeCount) + " ";
-		debugInfo += "PIN=" + String(pin) + " ";
-		debugInfo += "PAUSE=" + String(pauseBit) + " ";
-		debugInfo += "PAUSECNT=" + String(pauseCount) + " ";
-		debugInfo += "PAUSEUP=" + String(pauseUp) + " ";
-		debugInfo += "PAUSEDOWN=" + String(pauseDown) + " ";		
+		debugInfo += "OFFDEL=" + String(offDelay) + " ";
+		//debugInfo += "FADEUP=" + String(fadeUp) + " ";
+		//debugInfo += "FADECNT=" + String(fadeCount) + " ";
+		//debugInfo += "PIN=" + String(pin) + " ";
+		//debugInfo += "PAU=" + String(pauseBit) + " ";
+		//debugInfo += "PAUCNT=" + String(pauseCount) + " ";
+		//debugInfo += "PAUUP=" + String(pauseUp) + " ";
+		//debugInfo += "PAUDOWN=" + String(pauseDown) + " ";		
 
 		Serial.println(debugInfo);
 
