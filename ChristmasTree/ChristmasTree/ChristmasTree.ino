@@ -27,24 +27,26 @@ enum show {
 	SHOW_OFF
 };
 
-const bool DEBUG = false;
-const unsigned long STARTUP_DELAY = 5000000;
+const bool DEBUG = true;
+const unsigned long STARTUP_DELAY = 2500000;
 const int MAX_PERIOD = 2560;
 const int MIN_PERIOD = 0;
 const int REVERSE_DELAY = 50;
 
 // pin mapping
-int lightsPinA = 13; // WHITE
-int lightsPinB = 12; // MULTI
+int lightsPinA = 13; // MULTI
+int lightsPinB = 12; // WHITE
 int lightsPinEnable = 6;
 
 int onDelay = MIN_PERIOD;
 int offDelay = MAX_PERIOD;
 bool fadeUp = true;
-int fadeCount = 0; 
-lightcolor color = WHITE;
-bool seqBothColors = false;
-int pin = lightsPinA;
+int fadeCount = 0;
+int pin = lightsPinB;
+
+unsigned long currentMicros;
+unsigned long previousDebugMicros;
+double debugInterval;
 
 // pause
 bool pauseBit = false;
@@ -54,6 +56,8 @@ int pauseDown = 2000;
 
 // show
 show action = STATIC_WHITE;
+lightcolor color;
+bool seqBothColors;
 
 void setup() {
 	pinMode(lightsPinA, OUTPUT);
@@ -62,6 +66,7 @@ void setup() {
 
 	// start serial
 	Serial.begin(9600);
+	debugInterval = 0.1;
 
 	digitalWrite(lightsPinA, LOW);
 	digitalWrite(lightsPinB, LOW);
@@ -73,39 +78,176 @@ void setup() {
 }
 
 void loop() {
+	currentMicros = micros();
+	checkSerial();
+
 	if (DEBUG) {
 		displayDebugInfo();
 	}
+}
+
+void checkSerial() 
+{
+	String data = "";
+	while (Serial.available() > 0)
+	{
+		data += Serial.readString();
+		if (data.endsWith("\n"))
+		{
+			data.replace("\n", "");
+			splitSerialData(data);
+		}
+	}
+}
+
+void splitSerialData(String data)
+{
+	String tempData = data;
+	tempData.trim();
+	while (tempData.length() > 0)
+	{
+		int index = tempData.indexOf(";");
+		String subString = "";
+		if (index == 0 || index == -1)
+		{			
+			subString = tempData.substring(0);
+		}
+		else
+		{
+			subString = tempData.substring(0, index + 1);
+		}
+		tempData.replace(subString, "");
+		parseSerialData(subString);
+	}
+}
+
+void parseSerialData(String data)
+{	
+	if (data.substring(0, 2) == "sh") {
+		int show = atoi(data.substring(2).c_str());
+		switch (show)
+		{
+		case 0:
+			action = STATIC_WHITE;
+			startup();
+			break;
+
+		case 1:
+			action = STATIC_MULTI;
+			startup();
+			break;
+
+		case 2:
+			action = FADE_WHITE;
+			startup();
+			break;
+
+		case 3:
+			action = FADE_MULTI;
+			startup();
+			break;
+
+		case 4:
+			action = FADE_SEQ_BOTH;
+			startup();
+			break;
+
+		case 5:
+			action = FADE_BOTH;
+			startup();
+			break;
+
+		case 6:
+			action = SHOW_OFF;
+			startup();
+			break;
+		}
+	}
+	/*if (data.substring(0, 2) == "ac")
+	{
+		int a = atoi(data.substring(2).c_str());
+		action = a;
+	}
+	else if (data.substring(0, 2) == "d1")
+	{
+		float f = data.substring(2).toFloat();
+		delay1 = f * 1000L;
+	}
+	else if (data.substring(0, 2) == "d2")
+	{
+		float f = data.substring(2).toFloat();
+		delay2 = f * 1000L;
+	}
+	else if (data.substring(0, 2) == "fc")
+	{
+		float f = data.substring(2).toFloat();
+		fadeColorInterval = f * 1000L;
+		tempFadeColorInterval = fadeColorInterval;
+	}
+	else if (data.substring(0, 2) == "br")
+	{
+		int a = atoi(data.substring(2).c_str());
+		lightBrightness = a;
+	}
+	else if (data.substring(0, 2) == "dd") {
+		int d = atoi(data.substring(2).c_str());
+		delay1 = d;
+		delay2 = d;
+	}
+	else if (data.substring(0, 2) == "ac") {
+		int a = atoi(data.substring(2).c_str());
+		if (a == 3)
+		{
+			delay1 = 2000;
+			delay2 = 0;
+		}
+		action = a;
+	}
+	
+	else if (data.substring(0, 2) == "pw") {
+		int a = atoi(data.substring(2).c_str());
+		powerState = a;
+	}
+	
+	else if (data.substring(0, 2) == "cl") {
+		int a = atoi(data.substring(2).c_str());
+		colorState = a;
+	}*/
 }
 
 void startup() {
 	// Load from eeprom
 	// Select show
 	switch (action)	{
-	case STATIC_WHITE:
+	case STATIC_WHITE:		
 		color = WHITE;
 		seqBothColors = false;
-		Timer1.setPeriod(5000000);
+		static_color();
+		Timer1.setPeriod(2500000);
 		Timer1.attachInterrupt(static_color);
 		break;
 
 	case STATIC_MULTI:
 		color = MULTI;
 		seqBothColors = false;
-		Timer1.setPeriod(5000000);
+		static_color();
+		Timer1.setPeriod(2500000);
 		Timer1.attachInterrupt(static_color);
 		break;
 
 	case FADE_WHITE:
 		color = WHITE;
 		seqBothColors = false;
+		static_color();
 		Timer1.setPeriod(offDelay);
 		Timer1.attachInterrupt(fade);
 		break;
 
-	case FADE_MULTI:
+	case FADE_MULTI:		
 		color = MULTI;
 		seqBothColors = false;
+		//pin = lightsPinA;
+		static_color();
 		Timer1.setPeriod(offDelay);
 		Timer1.attachInterrupt(fade);
 		break;
@@ -113,6 +255,8 @@ void startup() {
 	case FADE_SEQ_BOTH:
 		color = WHITE;
 		seqBothColors = true;
+		pin = lightsPinB;
+		static_color();
 		Timer1.setPeriod(offDelay);
 		Timer1.attachInterrupt(fade);
 		break;
@@ -120,9 +264,14 @@ void startup() {
 	case FADE_BOTH:
 		color = BOTH;
 		seqBothColors = false;
+		static_color();
 		Timer1.setPeriod(offDelay);
 		Timer1.attachInterrupt(fade);
 		break;
+
+	case SHOW_OFF:
+		color = OFF;
+		static_color();
 	}
 }
 
@@ -196,79 +345,81 @@ void fade() {
 void static_color() {
 	switch (color) {
 	case WHITE:
+		pin = lightsPinB;
+		digitalWrite(lightsPinA, LOW);
+		digitalWrite(lightsPinB, HIGH);
+		break;
+
+	case MULTI:
+		pin = lightsPinA;
 		digitalWrite(lightsPinA, HIGH);
 		digitalWrite(lightsPinB, LOW);
 		break;
 
-	case MULTI:
+	case OFF:
 		digitalWrite(lightsPinA, LOW);
-		digitalWrite(lightsPinB, HIGH);
+		digitalWrite(lightsPinB, LOW);
 		break;
 	}
 }
 
-////void setLightColor(lightcolor lights) {
-////
-////	switch (lights)
-////	{
-////	case WHITE:
-////		PORTB = B00010000;
-////		break;
-////	case MULTI:
-////		PORTB = B00100000;
-////		break;
-////	case OFF:
-////		PORTB = B00000000;
-////		PORTB = B00000000;
-////		break;
-////	default:
-////		break;
-////	}
-////}
-
-void pause() {
-	//digitalWrite(lightsPinA, LOW);
-	//digitalWrite(lightsPinB, LOW);
-	//show
-	pauseCount++;
-	/*if (pauseCount == 2) {
-		
-		
-	}*/
-	
-	//Timer1.detachInterrupt();
-	if (fadeUp)
-	{
-		Timer1.setPeriod(onDelay);
-	}
-	else
-	{
-		Timer1.setPeriod(offDelay);
-	}
-
-	digitalWrite(lightsPinA, !(bool)digitalRead(lightsPinA));
-	digitalWrite(lightsPinB, !(bool)digitalRead(lightsPinB));
-	
-	if (pauseCount == 10000)
-	{
-		pauseCount = 0;
-		//Timer1.attachInterrupt(testLOW);
-	}	
-}
-
 void displayDebugInfo() {
-	//if ((currentMicros - previousDebugMicros >= (debugInterval * 1000000L))) {
+	if ((currentMicros - previousDebugMicros >= (debugInterval * 1000000L))) {
 		String debugInfo = "DEBUG: ";
 
-		//debugInfo += "IVAL=" + String(debugInterval) + " ";
-		//debugInfo += "SHOW=" + String(action) + " ";
+		/*debugInfo += "DEBUG=" + String(DEBUG) + " ";
+		debugInfo += "STARTDEL=" + String(STARTUP_DELAY) + " ";
+		debugInfo += "MAXPERIOD=" + String(MAX_PERIOD) + " ";
+		debugInfo += "MINPERIOD=" + String(MIN_PERIOD) + " ";
+		debugInfo += "REVERSEDEL=" + String(REVERSE_DELAY) + " ";
+		debugInfo += "ACTION=" + getAction() + " ";
+		debugInfo += "COLOR=" + getColor() + " ";
+		debugInfo += "SEQBOTHCOLOR=" + String(seqBothColors) + " ";
 		debugInfo += "ONDEL=" + String(onDelay) + " ";
-		debugInfo += "OFFDEL=" + String(offDelay) + " ";
+		debugInfo += "OFFDEL=" + String(offDelay) + " ";*/
+		debugInfo += "FADEUP=" + String(fadeUp) + " ";
+		debugInfo += "FADECNT=" + String(fadeCount) + " ";
+		debugInfo += "PIN=" + String(pin) + " ";
+		debugInfo += "PAUSE=" + String(pauseBit) + " ";
+		debugInfo += "PAUSECNT=" + String(pauseCount) + " ";
+		debugInfo += "PAUSEUP=" + String(pauseUp) + " ";
+		debugInfo += "PAUSEDOWN=" + String(pauseDown) + " ";		
 
 		Serial.println(debugInfo);
 
-		//previousDebugMicros = micros();
-	//}
+		previousDebugMicros = micros();
+	}
+}
+
+String getAction() {
+	switch (action)
+	{
+	case STATIC_WHITE:
+		return "static_white";
+		break;
+	case STATIC_MULTI:
+		return "static_multi";
+		break;
+	default:
+		break;
+	}
+}
+
+String getColor() {
+	switch (color)
+	{
+	case WHITE:
+		return "white";
+		break;
+	case MULTI:
+		return "multi";
+		break;
+	case OFF:
+		return "off";
+		break;
+	default:
+		break;
+	}
 }
 
 
@@ -303,10 +454,9 @@ void displayDebugInfo() {
 
 
 
-//unsigned long currentMicros;
-//unsigned long previousDebugMicros;
+
 //unsigned long previousTestMicros;
-//double debugInterval;
+
 
 //
 
@@ -330,120 +480,18 @@ void displayDebugInfo() {
 //unsigned long previousFadeMicros = 0;
 //
 //void loop() {
-//	currentMicros = micros();
+//	
 //	currentFadeMicros = micros();
-//	checkSerial();
+
 //
 
 //}
 //
-//void checkSerial() 
-//{
-//	String data = "";
-//	while (Serial.available() > 0)
-//	{
-//		data += Serial.readString();
-//		if (data.endsWith("\n"))
-//		{
-//			data.replace("\n", "");
-//			splitSerialData(data);
-//		}
-//	}
-//}
+
 //
-//void splitSerialData(String data)
-//{
-//	String tempData = data;
-//	tempData.trim();
-//	while (tempData.length() > 0)
-//	{
-//		int index = tempData.indexOf(";");
-//		String subString = "";
-//		if (index == 0 || index == -1)
-//		{			
-//			subString = tempData.substring(0);
-//		}
-//		else
-//		{
-//			subString = tempData.substring(0, index + 1);
-//		}
-//		tempData.replace(subString, "");
-//		parseSerialData(subString);
-//	}
-//}
+
 //
-//void parseSerialData(String data)
-//{
-//	if (data.substring(0, 2) == "sh") {
-//		action = atoi(data.substring(2).c_str());
-//		switch (action)
-//		{
-//		case 0:
-//			//Timer1.detachInterrupt();
-//			//Timer1.attachInterrupt(seqFade);
-//			break;
-//		case 1:
-//			//Timer1.detachInterrupt();
-//			//Timer1.attachInterrupt(fadeIntoBlack);
-//			break;
-//
-//		case 2:
-//			//Timer1.detachInterrupt();
-//			//Timer1.attachInterrupt(on);
-//			break;
-//		}
-//	}
-//	/*if (data.substring(0, 2) == "ac")
-//	{
-//		int a = atoi(data.substring(2).c_str());
-//		action = a;
-//	}
-//	else if (data.substring(0, 2) == "d1")
-//	{
-//		float f = data.substring(2).toFloat();
-//		delay1 = f * 1000L;
-//	}
-//	else if (data.substring(0, 2) == "d2")
-//	{
-//		float f = data.substring(2).toFloat();
-//		delay2 = f * 1000L;
-//	}
-//	else if (data.substring(0, 2) == "fc")
-//	{
-//		float f = data.substring(2).toFloat();
-//		fadeColorInterval = f * 1000L;
-//		tempFadeColorInterval = fadeColorInterval;
-//	}
-//	else if (data.substring(0, 2) == "br")
-//	{
-//		int a = atoi(data.substring(2).c_str());
-//		lightBrightness = a;
-//	}
-//	else if (data.substring(0, 2) == "dd") {
-//		int d = atoi(data.substring(2).c_str());
-//		delay1 = d;
-//		delay2 = d;
-//	}
-//	else if (data.substring(0, 2) == "ac") {
-//		int a = atoi(data.substring(2).c_str());
-//		if (a == 3)
-//		{
-//			delay1 = 2000;
-//			delay2 = 0;
-//		}
-//		action = a;
-//	}
-//	
-//	else if (data.substring(0, 2) == "pw") {
-//		int a = atoi(data.substring(2).c_str());
-//		powerState = a;
-//	}
-//	
-//	else if (data.substring(0, 2) == "cl") {
-//		int a = atoi(data.substring(2).c_str());
-//		colorState = a;
-//	}*/
-//}
+
 //
 
 //
@@ -632,22 +680,7 @@ void displayDebugInfo() {
 ////
 //
 ////
-////String getLightColor() {
-////	switch (ledColor)
-////	{
-////	case WHITE:
-////		return "white";
-////		break;
-////	case MULTI:
-////		return "multi";
-////		break;
-////	case OFF:
-////		return "off";
-////		break;
-////	default:
-////		break;
-////	}
-////}
+
 ////
 ////String getLightStatus() {
 ////	if (lightsOn)
