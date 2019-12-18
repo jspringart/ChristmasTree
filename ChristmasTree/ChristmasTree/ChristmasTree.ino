@@ -4,40 +4,65 @@
  Author:	Jason Springart
 */
 
-int *p;
+volatile uint8_t *dutyCyclePointer;
 
-volatile uint8_t *t;
+unsigned long currentMicros;
+unsigned long previousMicros;
+unsigned long interval;
+
+bool fadeUp;
+//int brightness; // 0 - 255
 bool color = true;
 
 void setup() {
 	pinMode(5, OUTPUT);
 	pinMode(6, OUTPUT);
+	pinMode(13, INPUT);
+
 	TCCR0A = 0;//reset the register
-	TCCR0B = 0;//reset tthe register
+	TCCR0B = 0;//reset the register
+
 	TCCR0A = 0b10100011;// fast pwm mode
 	TCCR0B = 0b00000011;// prescaler 64
-	OCR0A = 50;//duty cycle for pin 6
-	OCR0B = 50;//duty cycle for pin 5
-	t = &OCR0A;
+
+	OCR0A = 255;//duty cycle for pin 6
+	OCR0B = 255;//duty cycle for pin 5
+	dutyCyclePointer = &OCR0A;
+
+	interval = 500000;
+	fadeUp = true;
 }
 
-int counter = 0;
+
 void loop() {
-	counter++;
-	if (counter == 255) {
-		counter = 0;
-		*t = counter;
-		if (color)
-		{
-			t = &OCR0A;
-			color = false;
-		}
-		else
-		{
-			t = &OCR0B;
-			color = true;
-		}
+	currentMicros = micros();
+
+	if (currentMicros - previousMicros >= interval) {
+		stateMachine();
+		previousMicros = micros();
+	}	
+}
+
+byte test;
+int counter = 0;
+void stateMachine() {
+	if ((*dutyCyclePointer) == 0) {
+		(*dutyCyclePointer) = 255;
+		setColor();
 	}
-	
-	delayMicroseconds(500000);
+	(*dutyCyclePointer)--;
+}
+
+void setColor()
+{
+	if (color)
+	{
+		dutyCyclePointer = &OCR0A;
+		color = false;
+	}
+	else
+	{
+		dutyCyclePointer = &OCR0B;
+		color = true;
+	}
 }
