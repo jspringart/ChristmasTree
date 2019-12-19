@@ -252,47 +252,41 @@ void offState() {
 	OCR0B = 0;
 }
 
-bool pause = false;
+bool paused = false;
+void fadeBurst() {
+	if (paused) {
+		pause();
+	}
+	else {
+		if (brightness == 255) {
+			brightness = 0;
+			if (ledColor == WHITE) {
+				ledColor = MULTI;
+			}
+			else {
+				ledColor = WHITE;
+			}
+			paused = true;
+		}
+		else {
+			brightness++;
+		}
+		setLedState();		
+	}	
+}
+
 int pauseCounter = 0;
 int pauseDelay = 100;
 int pauseDelay1 = 200;
 int pauseDelay2 = 100;
-void fadeBurst() {
-	/*if ((*dutyCyclePointer) == 255) {
-		(*dutyCyclePointer) = 0;
-		if (ledColor == WHITE) {
-			ledColor = MULTI;
-		}
-		else {
-			ledColor = WHITE;
-		}
-	}
-	(*dutyCyclePointer)++;	*/
-	if (pause) {
-		if (pauseCounter >= pauseDelay) {
-			pause = false;
-			pauseCounter = 0;
-		}
-		else {
-			pauseCounter++;
-		}		
+void pause() {
+	if (pauseCounter >= pauseDelay) {
+		paused = false;
+		pauseCounter = 0;
 	}
 	else {
-		if (brightness == 255) {
-			brightness = 1;
-			if (ledColor == WHITE) {
-				ledColor = MULTI;
-				//pauseDelay = pauseDelay1;
-			}
-			else {
-				ledColor = WHITE;
-				//pauseDelay = pauseDelay2;
-			}
-			pause = true;
-		}		
-		setLedState();
-		brightness++;
-	}	
+		pauseCounter++;
+	}
 }
 
 
