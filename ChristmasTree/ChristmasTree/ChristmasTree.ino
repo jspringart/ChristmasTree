@@ -56,7 +56,7 @@ void setup() {
 
 	stateInterval = 500000;
 	debugInterval = 500000;
-	machineState = OFF;
+	machineState = FADE_BURST;
 	ledColor = WHITE;
 	brightness = 0;
 	//fadeUp = true;
@@ -82,6 +82,7 @@ void startup() {
 	case FADE_BURST:
 		ledColor = WHITE;
 		brightness = 0;
+		stateInterval = 8000;
 		break;
 
 	case OFF:
@@ -251,6 +252,11 @@ void offState() {
 	OCR0B = 0;
 }
 
+bool pause = false;
+int pauseCounter = 0;
+int pauseDelay = 100;
+int pauseDelay1 = 200;
+int pauseDelay2 = 100;
 void fadeBurst() {
 	/*if ((*dutyCyclePointer) == 255) {
 		(*dutyCyclePointer) = 0;
@@ -262,15 +268,31 @@ void fadeBurst() {
 		}
 	}
 	(*dutyCyclePointer)++;	*/
-	if (brightness == 255) {
-		brightness = 0;
-		if (ledColor == WHITE) {
-			ledColor = MULTI;
+	if (pause) {
+		if (pauseCounter >= pauseDelay) {
+			pause = false;
+			pauseCounter = 0;
 		}
 		else {
-			ledColor = WHITE;
-		}
+			pauseCounter++;
+		}		
 	}
+	else {
+		if (brightness == 255) {
+			brightness = 1;
+			if (ledColor == WHITE) {
+				ledColor = MULTI;
+				//pauseDelay = pauseDelay1;
+			}
+			else {
+				ledColor = WHITE;
+				//pauseDelay = pauseDelay2;
+			}
+			pause = true;
+		}		
+		setLedState();
+		brightness++;
+	}	
 }
 
 
