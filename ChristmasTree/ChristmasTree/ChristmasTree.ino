@@ -12,6 +12,7 @@ enum STATE {
 	FADE_SEQ,
 	FADE_BOTH,
 	FADE_BURST,
+	PAUSE,
 	OFF
 };
 
@@ -20,6 +21,8 @@ enum COLOR {
 	MULTI,
 	BOTH
 };
+
+void changeState(STATE newState);
 
 volatile uint8_t *dutyCyclePointer;
 
@@ -32,12 +35,19 @@ unsigned long previousDebugMicros;
 unsigned long debugInterval;
 
 STATE machineState;
+STATE previousState;
 COLOR ledColor;
 int brightness;
+int fadeUp;
+int fadeCounter;
+int bright1;
+int bright2;
 
-
-// ?testing
-bool fadeUp;
+bool paused = false;
+int pauseDelay;
+int pauseDelay1 = 10;
+int pauseDelay2 = 250;
+int pauseCounter = 0;
 
 void setup() {
 	pinMode(5, OUTPUT);
@@ -56,10 +66,9 @@ void setup() {
 
 	stateInterval = 500000;
 	debugInterval = 500000;
-	machineState = FADE_BURST;
+	machineState = FADE_BOTH;
 	ledColor = WHITE;
 	brightness = 0;
-	//fadeUp = true;
 
 	// load startup values
 	startup();
@@ -79,9 +88,44 @@ void startup() {
 		brightness = 255;
 		break;
 
-	case FADE_BURST:
+	case FADE_WHITE:
+		pauseDelay1 = 100;
+		pauseDelay2 = 50;
 		ledColor = WHITE;
 		brightness = 0;
+		fadeUp = true;
+		fadeCounter = 0;
+		break;
+
+	case FADE_MULTI:
+		pauseDelay1 = 100;
+		pauseDelay2 = 50;
+		ledColor = MULTI;
+		brightness = 0;
+		fadeUp = true;
+		fadeCounter = 0;
+		break;
+
+	case FADE_SEQ:
+		pauseDelay1 = 25;
+		pauseDelay2 = 100;
+		ledColor = WHITE;
+		brightness = 0;
+		fadeUp = true;
+		fadeCounter = 0;
+		break;
+
+	case FADE_BOTH:
+		bright1 = 1;
+		bright2 = 254;
+		stateInterval = 7000;
+		break;
+
+	case FADE_BURST:
+		pauseDelay1 = 10;
+		pauseDelay2 = 250;
+		ledColor = WHITE;
+		brightness = 255;
 		stateInterval = 8000;
 		break;
 
@@ -104,7 +148,7 @@ void loop() {
 	}	
 
 	if (currentMicros - previousDebugMicros >= debugInterval) {
-		displayDebugInfo();
+		//displayDebugInfo();
 		previousDebugMicros = micros();
 	}
 }
@@ -112,11 +156,18 @@ void loop() {
 void displayDebugInfo() {
 	String debugInfo = "DEBUG: ";
 
-	debugInfo += "SINT=" + String(stateInterval) + " ";
-	debugInfo += "DINT=" + String(debugInterval) + " ";
-	debugInfo += "STAT=" + String(machineState) + " ";
+	debugInfo += "SI=" + String(stateInterval) + " ";
+	debugInfo += "DI=" + String(debugInterval) + " ";
+	debugInfo += "ST=" + String(machineState) + " ";
 	debugInfo += "COLR=" + String(ledColor) + " ";
-	debugInfo += "BRIT=" + String(brightness) + " ";
+	debugInfo += "BR=" + String(brightness) + " ";
+	debugInfo += "PC=" + String(pauseCounter) + " ";
+	debugInfo += "PD=" + String(pauseDelay) + " ";
+	debugInfo += "P1=" + String(pauseDelay1) + " ";
+	debugInfo += "P2=" + String(pauseDelay2) + " ";
+	debugInfo += "FC=" + String(fadeCounter) + " ";
+	debugInfo += "B1=" + String(bright1) + " ";
+	debugInfo += "B2=" + String(bright2) + " ";
 
 	Serial.println(debugInfo);
 }
@@ -153,10 +204,11 @@ void parseSerialData(String data) {
 	String command = data.substring(0, 2);
 	String value = data.substring(2);
 	if (command == "br") {
-		brightness = atoi(value.c_str());
+		brightness = value.toInt();
 	}
 	else if (command == "st") {
-		machineState = (STATE)atoi(value.c_str());
+		machineState = (STATE)value.toInt();
+		startup();
 	}
 	else if (command == "si") {
 		stateInterval = value.toDouble() * 1000000;
@@ -164,46 +216,18 @@ void parseSerialData(String data) {
 	else if (command == "di") {
 		debugInterval = value.toDouble() * 1000000;
 	}
-//	if (data.substring(0, 2) == "sh") {
-//		int show = atoi(data.substring(2).c_str());
-//		switch (show)
-//		{
-//		case 0:
-//			action = STATIC_WHITE;
-//			startup();
-//			break;
-//
-//		case 1:
-//			action = STATIC_MULTI;
-//			startup();
-//			break;
-//
-//		case 2:
-//			action = FADE_WHITE;
-//			startup();
-//			break;
-//
-//		case 3:
-//			action = FADE_MULTI;
-//			startup();
-//			break;
-//
-//		case 4:
-//			action = FADE_SEQ_BOTH;
-//			startup();
-//			break;
-//
-//		case 5:
-//			action = FADE_BOTH;
-//			startup();
-//			break;
-//
-//		case 6:
-//			action = SHOW_OFF;
-//			startup();
-//			break;
-//		}
-//	}
+	else if (command == "p1") {
+		pauseDelay1 = value.toInt();
+	}
+	else if (command == "p2") {
+		pauseDelay2 = value.toInt();
+	}
+	else if (command == "b1") {
+		bright1 = value.toInt();
+	}
+	else if (command == "b2") {
+		bright2 = value.toInt();
+	}
 }
 
 void stateMachine() {
@@ -216,8 +240,29 @@ void stateMachine() {
 		setLedState();
 		break;
 
+	case FADE_WHITE:
+		fade();
+		break;
+
+	case FADE_MULTI:
+		fade();
+		break;
+
+	case FADE_SEQ:
+		fadeSeq();
+		fade();
+		break;
+
+	case FADE_BOTH:
+		fadeBoth();
+		break;
+
 	case FADE_BURST:
 		fadeBurst();
+		break;
+
+	case PAUSE:
+		pause();
 		break;
 
 	case OFF:
@@ -232,13 +277,13 @@ void stateMachine() {
 void setLedState() {
 	switch (ledColor) {
 	case WHITE:
-		OCR0A = brightness;
-		OCR0B = 0;
+		OCR0A = 0;
+		OCR0B = brightness;
 		break;
 
 	case MULTI:
-		OCR0A = 0;
-		OCR0B = brightness;
+		OCR0A = brightness;
+		OCR0B = 0;
 		break;
 
 	default:
@@ -252,41 +297,120 @@ void offState() {
 	OCR0B = 0;
 }
 
-bool paused = false;
 void fadeBurst() {
-	if (paused) {
-		pause();
+	if (brightness == 255)
+	{
+		pauseDelay = pauseDelay2;
+		changeState(PAUSE);
+	}
+	if (brightness == 0) {
+		pauseDelay = pauseDelay1;
+		changeState(PAUSE);
+		brightness = 255;
+		if (ledColor == WHITE) {
+			ledColor = MULTI;
+		}
+		else {
+			ledColor = WHITE;
+		}	
+		return;
 	}
 	else {
+		brightness--;
+	}
+	setLedState();
+}
+
+void fade() {
+	if (fadeUp)
+	{
 		if (brightness == 255) {
-			brightness = 0;
-			if (ledColor == WHITE) {
-				ledColor = MULTI;
-			}
-			else {
-				ledColor = WHITE;
-			}
-			paused = true;
+			fadeUp = false;
+			fadeCounter++;
+			pauseDelay = pauseDelay2;
+			changeState(PAUSE);
 		}
 		else {
 			brightness++;
+		}		
+	}
+	else {
+		if (brightness == 0) {
+			fadeUp = true;
+			fadeCounter++;
+			pauseDelay = pauseDelay1;
+			changeState(PAUSE);
 		}
-		setLedState();		
-	}	
+		else {
+			brightness--;
+		}		
+	}
+	setLedState();
 }
 
-int pauseCounter = 0;
-int pauseDelay = 100;
-int pauseDelay1 = 200;
-int pauseDelay2 = 100;
+void fadeSeq() {
+	if (fadeCounter == 2) {
+		fadeCounter = 0;
+		if (ledColor == WHITE) {
+			ledColor = MULTI;
+		}
+		else {
+			ledColor = WHITE;
+		}
+	}
+}
+
+void fadeBoth() {
+	if (ledColor == WHITE) {
+		ledColor = MULTI;
+		brightness = bright1;
+	}
+	else {
+		ledColor = WHITE;
+		brightness = bright2;
+	}
+	if (fadeUp) {
+		if (bright1 == 254) {
+			fadeUp = false;
+			fadeCounter++;
+			pauseDelay = pauseDelay1;
+			changeState(PAUSE);
+		}
+		else {
+			bright1++;
+			bright2--;
+		}		
+	}
+	else {
+		if (bright2 == 254) {
+			fadeUp = true;
+			fadeCounter++;
+			pauseDelay = pauseDelay1;
+			changeState(PAUSE);
+		}
+		else {
+			bright1--;
+			bright2++;
+		}		
+	}
+	
+	
+	setLedState();
+}
+
 void pause() {
 	if (pauseCounter >= pauseDelay) {
-		paused = false;
+		machineState = previousState;
 		pauseCounter = 0;
 	}
 	else {
 		pauseCounter++;
 	}
+}
+
+void changeState(STATE newState) {
+	previousState = machineState;
+	machineState = newState;
 }
 
 
