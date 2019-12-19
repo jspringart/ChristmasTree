@@ -70,7 +70,7 @@ void setup() {
 	ledColor = WHITE;
 	brightness = 0;
 
-	// load startup values
+	// TODO: load startup values from Eeprom
 	startup();
 
 	Serial.begin(9600);	
@@ -116,8 +116,8 @@ void startup() {
 		break;
 
 	case FADE_BOTH:
-		bright1 = 1;
-		bright2 = 254;
+		bright1 = 10;
+		bright2 = 255;
 		stateInterval = 7000;
 		break;
 
@@ -148,7 +148,8 @@ void loop() {
 	}	
 
 	if (currentMicros - previousDebugMicros >= debugInterval) {
-		//displayDebugInfo();
+		// TODO: Add code to turn off debug info
+		displayDebugInfo();
 		previousDebugMicros = micros();
 	}
 }
@@ -361,6 +362,7 @@ void fadeSeq() {
 }
 
 void fadeBoth() {
+	// TODO: Get fadeBoth to work without blinking
 	if (ledColor == WHITE) {
 		ledColor = MULTI;
 		brightness = bright1;
@@ -394,7 +396,6 @@ void fadeBoth() {
 		}		
 	}
 	
-	
 	setLedState();
 }
 
@@ -411,22 +412,4 @@ void pause() {
 void changeState(STATE newState) {
 	previousState = machineState;
 	machineState = newState;
-}
-
-
-
-
-
-void setColor()
-{
-	/*if (color)
-	{
-		dutyCyclePointer = &OCR0A;
-		color = false;
-	}
-	else
-	{
-		dutyCyclePointer = &OCR0B;
-		color = true;
-	}*/
 }
