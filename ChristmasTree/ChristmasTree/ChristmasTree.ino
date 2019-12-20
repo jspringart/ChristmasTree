@@ -4,6 +4,8 @@
  Author:	Jason Springart
 */
 
+#include <EEPROM.h>
+
 enum STATE {
 	STATIC_WHITE,
 	STATIC_MULTI,
@@ -33,7 +35,7 @@ unsigned long stateInterval;
 
 unsigned long previousDebugMicros;
 unsigned long debugInterval;
-bool debug = false;
+bool debug = true;
 
 STATE machineState;
 STATE previousState;
@@ -67,11 +69,11 @@ void setup() {
 
 	stateInterval = 500000;
 	debugInterval = 500000;
-	machineState = FADE_BOTH;
+	machineState = OFF;
 	ledColor = WHITE;
 	brightness = 0;
 
-	// TODO: load startup values from Eeprom
+	machineState = (STATE)EEPROM.read(0);
 	startup();
 
 	Serial.begin(9600);	
@@ -82,54 +84,92 @@ void startup() {
 	case STATIC_WHITE:
 		ledColor = WHITE;
 		brightness = 255;
+		stateInterval = 500000;
+		fadeUp = true;
+		fadeCounter = 0;
+		bright1 = 0;
+		bright2 = 0;
+		pauseDelay1 = 0;
+		pauseDelay2 = 0;
+		pauseDelay3 = 0;
 		break;
 
 	case STATIC_MULTI:
 		ledColor = MULTI;
 		brightness = 255;
+		stateInterval = 500000;
+		fadeUp = true;
+		fadeCounter = 0;
+		bright1 = 0;
+		bright2 = 0;
+		pauseDelay1 = 0;
+		pauseDelay2 = 0;
+		pauseDelay3 = 0;
 		break;
 
 	case FADE_WHITE:
-		pauseDelay1 = 100;
-		pauseDelay2 = 50;
 		ledColor = WHITE;
 		brightness = 0;
+		stateInterval = 50000;
 		fadeUp = true;
 		fadeCounter = 0;
+		bright1 = 0;
+		bright2 = 0;
+		pauseDelay1 = 100;
+		pauseDelay2 = 50;
+		pauseDelay3 = 0;
 		break;
 
 	case FADE_MULTI:
-		pauseDelay1 = 100;
-		pauseDelay2 = 50;
 		ledColor = MULTI;
 		brightness = 0;
+		stateInterval = 50000;
 		fadeUp = true;
 		fadeCounter = 0;
+		bright1 = 0;
+		bright2 = 0;
+		pauseDelay1 = 100;
+		pauseDelay2 = 50;
+		pauseDelay3 = 0;
 		break;
 
 	case FADE_SEQ:
-		pauseDelay1 = 25;
-		pauseDelay2 = 100;
 		ledColor = WHITE;
 		brightness = 0;
+		stateInterval = 50000;
 		fadeUp = true;
 		fadeCounter = 0;
+		bright1 = 0;
+		bright2 = 0;
+		pauseDelay1 = 100;
+		pauseDelay2 = 25;
+		pauseDelay3 = 0;
 		break;
 
 	case FADE_BOTH:
+		ledColor = WHITE;
+		brightness = 0;
+		stateInterval = 4000;
+		fadeUp = true;
+		fadeCounter = 0;
 		bright1 = 0;
 		bright2 = 255;
 		pauseDelay1 = 1000;
 		pauseDelay2 = 500;
-		stateInterval = 4000;
+		pauseDelay3 = 1;
 		break;
 
 	case FADE_BURST:
-		pauseDelay1 = 10;
-		pauseDelay2 = 250;
 		ledColor = WHITE;
 		brightness = 255;
 		stateInterval = 8000;
+		fadeUp = true;
+		fadeCounter = 0;
+		bright1 = 0;
+		bright2 = 0;
+		pauseDelay1 = 10;
+		pauseDelay2 = 250;
+		pauseDelay3 = 0;
 		break;
 
 	case OFF:
@@ -175,6 +215,8 @@ void displayDebugInfo() {
 	debugInfo += "B1=" + String(bright1) + " ";
 	debugInfo += "B2=" + String(bright2) + " ";
 
+	//debugInfo += "T=" + String(test) + " ";
+
 	Serial.println(debugInfo);
 }
 
@@ -213,8 +255,9 @@ void parseSerialData(String data) {
 		brightness = value.toInt();
 	}
 	else if (command == "st") {
-		machineState = (STATE)value.toInt();
-		startup();
+		EEPROM.update(0, value.toInt());
+		machineState = (STATE)EEPROM.read(0);
+		startup();		
 	}
 	else if (command == "si") {
 		stateInterval = value.toDouble() * 1000000;
@@ -270,13 +313,13 @@ void stateMachine() {
 		fadeBurst();
 		break;
 
-	case PAUSE:
-		pause();
-		break;
-
 	case OFF:
 		offState();
 		break;
+
+	case PAUSE:
+		pause();
+		break;	
 
 	default:
 		break;
