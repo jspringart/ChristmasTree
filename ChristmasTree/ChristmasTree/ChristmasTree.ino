@@ -33,7 +33,6 @@ unsigned long stateInterval;
 
 unsigned long previousDebugMicros;
 unsigned long debugInterval;
-bool DEBUG = false;
 
 STATE machineState;
 STATE previousState;
@@ -117,10 +116,9 @@ void startup() {
 		break;
 
 	case FADE_BOTH:
-		bright1 = 0;
-		bright2 = 0;
-		pauseDelay1 = 1000;
-		stateInterval = 7000;
+		bright1 = 255;
+		bright2 = 255;
+		stateInterval = 1000;
 		break;
 
 	case FADE_BURST:
@@ -150,9 +148,8 @@ void loop() {
 	}	
 
 	if (currentMicros - previousDebugMicros >= debugInterval) {
-		if (DEBUG) {
-			displayDebugInfo();
-		}		
+		// TODO: Add code to turn off debug info
+		displayDebugInfo();
 		previousDebugMicros = micros();
 	}
 }
@@ -365,22 +362,21 @@ void fadeSeq() {
 }
 
 void fadeBoth() {
-	// TODO: Get fadeBoth to work without blinking
-	
+	// TODO: Get fadeBoth to work without blinking	
 	if (fadeUp) {
-		if (bright1 == 254) {
+		if (bright1 == 255) {
 			fadeUp = false;
 			fadeCounter++;
-			pauseDelay = pauseDelay1;
+			pauseDelay = pauseDelay2;
 			changeState(PAUSE);
 		}
 		else {
 			bright1++;
-			//bright2--;
+			bright2--;
 		}		
 	}
 	else {
-		if (bright1 == 0) {
+		if (bright2 == 255) {
 			fadeUp = true;
 			fadeCounter++;
 			pauseDelay = pauseDelay1;
@@ -388,20 +384,12 @@ void fadeBoth() {
 		}
 		else {
 			bright1--;
-			//bright2++;
+			bright2++;
 		}		
 	}
+
 	setLedState();
-	if (ledColor == WHITE) {
-		ledColor = MULTI;
-		brightness = bright1;
-	}
-	else {
-		ledColor = WHITE;
-		brightness = bright2;
-	}	
-	
-	
+	flipColor();
 }
 
 void pause() {
@@ -412,7 +400,22 @@ void pause() {
 	else {
 		pauseCounter++;
 	}
-	//setLedState();
+
+	if (machineState == FADE_BOTH) {
+		flipColor();
+		setLedState();
+	}
+}
+
+void flipColor() {
+	if (ledColor == WHITE) {
+		ledColor = MULTI;
+		brightness = bright1;
+	}
+	else {
+		ledColor = WHITE;
+		brightness = bright2;
+	}
 }
 
 void changeState(STATE newState) {
