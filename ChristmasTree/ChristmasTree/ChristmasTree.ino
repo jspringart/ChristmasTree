@@ -116,9 +116,9 @@ void startup() {
 		break;
 
 	case FADE_BOTH:
-		bright1 = 10;
+		bright1 = 255;
 		bright2 = 255;
-		stateInterval = 7000;
+		stateInterval = 1000;
 		break;
 
 	case FADE_BURST:
@@ -362,20 +362,12 @@ void fadeSeq() {
 }
 
 void fadeBoth() {
-	// TODO: Get fadeBoth to work without blinking
-	if (ledColor == WHITE) {
-		ledColor = MULTI;
-		brightness = bright1;
-	}
-	else {
-		ledColor = WHITE;
-		brightness = bright2;
-	}
+	// TODO: Get fadeBoth to work without blinking	
 	if (fadeUp) {
-		if (bright1 == 254) {
+		if (bright1 == 255) {
 			fadeUp = false;
 			fadeCounter++;
-			pauseDelay = pauseDelay1;
+			pauseDelay = pauseDelay2;
 			changeState(PAUSE);
 		}
 		else {
@@ -384,7 +376,7 @@ void fadeBoth() {
 		}		
 	}
 	else {
-		if (bright2 == 254) {
+		if (bright2 == 255) {
 			fadeUp = true;
 			fadeCounter++;
 			pauseDelay = pauseDelay1;
@@ -395,8 +387,9 @@ void fadeBoth() {
 			bright2++;
 		}		
 	}
-	
+
 	setLedState();
+	flipColor();
 }
 
 void pause() {
@@ -406,6 +399,22 @@ void pause() {
 	}
 	else {
 		pauseCounter++;
+	}
+
+	if (machineState == FADE_BOTH) {
+		flipColor();
+		setLedState();
+	}
+}
+
+void flipColor() {
+	if (ledColor == WHITE) {
+		ledColor = MULTI;
+		brightness = bright1;
+	}
+	else {
+		ledColor = WHITE;
+		brightness = bright2;
 	}
 }
 
