@@ -215,8 +215,6 @@ void displayDebugInfo() {
 	debugInfo += "B1=" + String(bright1) + " ";
 	debugInfo += "B2=" + String(bright2) + " ";
 
-	//debugInfo += "T=" + String(test) + " ";
-
 	Serial.println(debugInfo);
 }
 
@@ -279,6 +277,9 @@ void parseSerialData(String data) {
 	}
 	else if (command == "b2") {
 		bright2 = value.toInt();
+	}
+	else if (command == "db") {
+		debug = (bool)value.toInt();
 	}
 }
 
