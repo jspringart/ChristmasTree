@@ -12,8 +12,8 @@ enum STATE {
 	FADE_SEQ,
 	FADE_BOTH,
 	FADE_BURST,
-	PAUSE,
-	OFF
+	OFF,
+	PAUSE
 };
 
 enum COLOR {
@@ -45,10 +45,11 @@ int bright1;
 int bright2;
 
 bool paused = false;
+int pauseCounter = 0;
 int pauseDelay;
 int pauseDelay1 = 10;
 int pauseDelay2 = 250;
-int pauseCounter = 0;
+int pauseDelay3 = 1;
 
 void setup() {
 	pinMode(5, OUTPUT);
@@ -60,7 +61,6 @@ void setup() {
 	TCCR0A = 0b10100011; // fast pwm mode
 	TCCR0B = 0b00000011; // prescaler 64
 
-	// ?Figure out which pins are which colors
 	OCR0A = 0; //duty cycle for pin 6
 	OCR0B = 0; //duty cycle for pin 5
 	dutyCyclePointer = &OCR0A;
@@ -151,7 +151,6 @@ void loop() {
 	}	
 
 	if (currentMicros - previousDebugMicros >= debugInterval) {
-		// TODO: Add code to turn off debug info
 		if (debug) {
 			displayDebugInfo();
 		}		
@@ -165,12 +164,13 @@ void displayDebugInfo() {
 	debugInfo += "SI=" + String(stateInterval) + " ";
 	debugInfo += "DI=" + String(debugInterval) + " ";
 	debugInfo += "ST=" + String(machineState) + " ";
-	debugInfo += "COLR=" + String(ledColor) + " ";
+	debugInfo += "CO=" + String(ledColor) + " ";
 	debugInfo += "BR=" + String(brightness) + " ";
 	debugInfo += "PC=" + String(pauseCounter) + " ";
 	debugInfo += "PD=" + String(pauseDelay) + " ";
 	debugInfo += "P1=" + String(pauseDelay1) + " ";
 	debugInfo += "P2=" + String(pauseDelay2) + " ";
+	debugInfo += "P3=" + String(pauseDelay3) + " ";
 	debugInfo += "FC=" + String(fadeCounter) + " ";
 	debugInfo += "B1=" + String(bright1) + " ";
 	debugInfo += "B2=" + String(bright2) + " ";
@@ -227,6 +227,9 @@ void parseSerialData(String data) {
 	}
 	else if (command == "p2") {
 		pauseDelay2 = value.toInt();
+	}
+	else if (command == "p3") {
+		pauseDelay3 = value.toInt();
 	}
 	else if (command == "b1") {
 		bright1 = value.toInt();
@@ -366,9 +369,7 @@ void fadeSeq() {
 	}
 }
 
-int counter = 0;
 void fadeBoth() {
-	// TODO: Get fadeBoth to work without blinking	
 	if (fadeUp) {
 		if (bright1 == 255) {
 			fadeUp = false;
@@ -377,13 +378,10 @@ void fadeBoth() {
 			changeState(PAUSE);
 		}
 		else {
-			//if (counter % 10 == 0) {
-				bright1++;
-				bright2--;
-				pauseDelay = 1;
-				changeState(PAUSE);
-				///counter = 0;
-			//}			
+			bright1++;
+			bright2--;
+			pauseDelay = pauseDelay3;
+			changeState(PAUSE);		
 		}		
 	}
 	else {
@@ -394,19 +392,15 @@ void fadeBoth() {
 			changeState(PAUSE);
 		}
 		else {
-			//if (counter % 10 == 0) {
-				bright1--;
-				bright2++;
-				pauseDelay = 1;
-				changeState(PAUSE);
-				//counter = 0;
-			//}			
+			bright1--;
+			bright2++;
+			pauseDelay = pauseDelay3;
+			changeState(PAUSE);		
 		}		
 	}
 
 	setLedState();
 	flipColor();
-	//counter++;
 }
 
 void pause() {
