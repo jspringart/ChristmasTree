@@ -33,6 +33,7 @@ unsigned long stateInterval;
 
 unsigned long previousDebugMicros;
 unsigned long debugInterval;
+bool debug = false;
 
 STATE machineState;
 STATE previousState;
@@ -116,9 +117,11 @@ void startup() {
 		break;
 
 	case FADE_BOTH:
-		bright1 = 255;
+		bright1 = 0;
 		bright2 = 255;
-		stateInterval = 1000;
+		pauseDelay1 = 1000;
+		pauseDelay2 = 500;
+		stateInterval = 4000;
 		break;
 
 	case FADE_BURST:
@@ -149,7 +152,9 @@ void loop() {
 
 	if (currentMicros - previousDebugMicros >= debugInterval) {
 		// TODO: Add code to turn off debug info
-		displayDebugInfo();
+		if (debug) {
+			displayDebugInfo();
+		}		
 		previousDebugMicros = micros();
 	}
 }
@@ -361,6 +366,7 @@ void fadeSeq() {
 	}
 }
 
+int counter = 0;
 void fadeBoth() {
 	// TODO: Get fadeBoth to work without blinking	
 	if (fadeUp) {
@@ -371,8 +377,13 @@ void fadeBoth() {
 			changeState(PAUSE);
 		}
 		else {
-			bright1++;
-			bright2--;
+			//if (counter % 10 == 0) {
+				bright1++;
+				bright2--;
+				pauseDelay = 1;
+				changeState(PAUSE);
+				///counter = 0;
+			//}			
 		}		
 	}
 	else {
@@ -383,13 +394,19 @@ void fadeBoth() {
 			changeState(PAUSE);
 		}
 		else {
-			bright1--;
-			bright2++;
+			//if (counter % 10 == 0) {
+				bright1--;
+				bright2++;
+				pauseDelay = 1;
+				changeState(PAUSE);
+				//counter = 0;
+			//}			
 		}		
 	}
 
 	setLedState();
 	flipColor();
+	//counter++;
 }
 
 void pause() {
@@ -401,9 +418,9 @@ void pause() {
 		pauseCounter++;
 	}
 
-	if (machineState == FADE_BOTH) {
-		flipColor();
+	if (previousState == FADE_BOTH) {
 		setLedState();
+		flipColor();
 	}
 }
 
