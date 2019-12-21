@@ -33,7 +33,7 @@ unsigned long stateInterval;
 
 unsigned long previousDebugMicros;
 unsigned long debugInterval;
-bool debug = false;
+bool debug = true;
 
 STATE machineState;
 STATE previousState;
@@ -377,10 +377,11 @@ int pauseBothDelay;
 bool pauseBothBit = false;
 
 void fadeBoth() {
-	flipColor();
-	if (!pauseBoth) {
+	
+	if (!pauseBothBit) {
+		flipColor();
 		if (fadeUp) {
-			if (pauseDelay1 == 300) {
+			if (pauseDelay1 == 275) {
 				fadeUp = false;
 				fadeCounter++;
 				//for (int i = 0; i < 30000; i++)
@@ -392,7 +393,7 @@ void fadeBoth() {
 				//changeState(PAUSE);
 				//return;
 				pauseBothBit = true;
-				pauseBothDelay = 100;
+				pauseBothDelay = 1000;
 			}
 			else {
 				pauseDelay1++;
@@ -406,7 +407,7 @@ void fadeBoth() {
 				fadeUp = true;
 				fadeCounter++;
 				pauseBothBit = true;
-				pauseBothDelay = 100;
+				pauseBothDelay = 1000;
 				//for (int i = 0; i < 30000; i++)
 				//{
 				//	counter++;
@@ -414,8 +415,8 @@ void fadeBoth() {
 				//}
 			}
 			else {
-				pauseDelay2++;
 				pauseDelay1--;
+				pauseDelay2++;				
 				
 				//pauseDelay = pauseDelay3;
 				//changeState(PAUSE);		
