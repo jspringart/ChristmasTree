@@ -121,7 +121,7 @@ void startup() {
 		bright2 = 255;
 		brightness = 255;
 		pauseDelay1 = 0;
-		pauseDelay2 = 300;
+		pauseDelay2 = 275;
 		stateInterval = 5;
 		ledColor = MULTI;
 		break;
@@ -371,6 +371,7 @@ void fadeSeq() {
 	}
 }
 
+int counter;
 void fadeBoth() {
 	flipColor();
 
@@ -378,9 +379,14 @@ void fadeBoth() {
 		if (pauseDelay1 == 300) {
 			fadeUp = false;
 			fadeCounter++;
-			pauseDelay = 1000;
-			changeState(PAUSE);
-			return;
+			//for (int i = 0; i < 30000; i++)
+			//{
+			//	counter++;
+			//	//flipColor();
+			//}
+			//pauseDelay = 1000;
+			//changeState(PAUSE);
+			//return;
 		}
 		else {
 			pauseDelay1++;
@@ -393,9 +399,11 @@ void fadeBoth() {
 		if (pauseDelay1 == 0) {
 			fadeUp = true;
 			fadeCounter++;
-			pauseDelay = 1000;
-			changeState(PAUSE);
-			return;
+			//for (int i = 0; i < 30000; i++)
+			//{
+			//	counter++;
+			//	//flipColor();
+			//}
 		}
 		else {
 			pauseDelay2++;
@@ -405,8 +413,7 @@ void fadeBoth() {
 		}
 	}
 
-	//setLedState();
-	
+	//setLedState();	
 }
 
 void pause() {
@@ -416,6 +423,10 @@ void pause() {
 	}
 	else {
 		pauseCounter++;
+	}
+
+	if (previousState == FADE_BOTH) {
+		//flipColor();
 	}
 }
 
@@ -434,6 +445,8 @@ void flipColor() {
 }
 
 void changeState(STATE newState) {
-	previousState = machineState;
-	machineState = newState;
+	if (machineState != PAUSE) {
+		previousState = machineState;
+		machineState = newState;
+	}	
 }
