@@ -372,46 +372,61 @@ void fadeSeq() {
 }
 
 int counter;
+int pauseBothCounter;
+int pauseBothDelay;
+bool pauseBothBit = false;
+
 void fadeBoth() {
 	flipColor();
-
-	if (fadeUp) {
-		if (pauseDelay1 == 300) {
-			fadeUp = false;
-			fadeCounter++;
-			//for (int i = 0; i < 30000; i++)
-			//{
-			//	counter++;
-			//	//flipColor();
-			//}
-			//pauseDelay = 1000;
-			//changeState(PAUSE);
-			//return;
+	if (!pauseBoth) {
+		if (fadeUp) {
+			if (pauseDelay1 == 300) {
+				fadeUp = false;
+				fadeCounter++;
+				//for (int i = 0; i < 30000; i++)
+				//{
+				//	counter++;
+				//	//flipColor();
+				//}
+				//pauseDelay = 1000;
+				//changeState(PAUSE);
+				//return;
+				pauseBothBit = true;
+				pauseBothDelay = 100;
+			}
+			else {
+				pauseDelay1++;
+				pauseDelay2--;
+				//pauseDelay = pauseDelay3;
+				//changeState(PAUSE);		
+			}
 		}
 		else {
-			pauseDelay1++;
-			pauseDelay2--;
-			//pauseDelay = pauseDelay3;
-			//changeState(PAUSE);		
+			if (pauseDelay1 == 0) {
+				fadeUp = true;
+				fadeCounter++;
+				pauseBothBit = true;
+				pauseBothDelay = 100;
+				//for (int i = 0; i < 30000; i++)
+				//{
+				//	counter++;
+				//	//flipColor();
+				//}
+			}
+			else {
+				pauseDelay2++;
+				pauseDelay1--;
+				
+				//pauseDelay = pauseDelay3;
+				//changeState(PAUSE);		
+			}
 		}
 	}
 	else {
-		if (pauseDelay1 == 0) {
-			fadeUp = true;
-			fadeCounter++;
-			//for (int i = 0; i < 30000; i++)
-			//{
-			//	counter++;
-			//	//flipColor();
-			//}
-		}
-		else {
-			pauseDelay2++;
-			pauseDelay1--;
-			//pauseDelay = pauseDelay3;
-			//changeState(PAUSE);		
-		}
+		pauseBoth();
 	}
+
+	
 
 	//setLedState();	
 }
@@ -423,10 +438,6 @@ void pause() {
 	}
 	else {
 		pauseCounter++;
-	}
-
-	if (previousState == FADE_BOTH) {
-		//flipColor();
 	}
 }
 
@@ -444,8 +455,19 @@ void flipColor() {
 	setLedState();	
 }
 
+void pauseBoth() {
+	if (pauseBothCounter >= pauseBothDelay) {
+		pauseBothCounter = 0;
+		pauseBothBit = false;
+	}
+	else {
+		pauseBothCounter++;
+	}
+	flipColor();
+}
+
 void changeState(STATE newState) {
-	if (machineState != PAUSE) {
+	if (machineState != PAUSE || newState != PAUSE) {
 		previousState = machineState;
 		machineState = newState;
 	}	
