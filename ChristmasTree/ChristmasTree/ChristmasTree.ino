@@ -372,6 +372,8 @@ void fadeSeq() {
 }
 
 void fadeBoth() {
+	flipColor();
+
 	if (fadeUp) {
 		if (pauseDelay1 == 300) {
 			fadeUp = false;
@@ -404,7 +406,7 @@ void fadeBoth() {
 	}
 
 	//setLedState();
-	flipColor();
+	
 }
 
 void pause() {
@@ -414,11 +416,6 @@ void pause() {
 	}
 	else {
 		pauseCounter++;
-	}
-
-	if (previousState == FADE_BOTH) {
-		//setLedState();
-		//flipColor();
 	}
 }
 
