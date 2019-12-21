@@ -74,7 +74,7 @@ void setup() {
 	// TODO: load startup values from Eeprom
 	startup();
 
-	Serial.begin(9600);	
+	Serial.begin(9600);
 }
 
 void startup() {
@@ -117,10 +117,11 @@ void startup() {
 		break;
 
 	case FADE_BOTH:
-		bright1 = 0;
+		bright1 = 255;
 		bright2 = 255;
-		pauseDelay1 = 1000;
-		pauseDelay2 = 500;
+		brightness = 255;
+		pauseDelay1 = 0;
+		pauseDelay2 = 1000;
 		stateInterval = 4000;
 		break;
 
@@ -148,12 +149,12 @@ void loop() {
 	if (currentMicros - previousStateMicros >= stateInterval) {
 		stateMachine();
 		previousStateMicros = micros();
-	}	
+	}
 
 	if (currentMicros - previousDebugMicros >= debugInterval) {
 		if (debug) {
 			displayDebugInfo();
-		}		
+		}
 		previousDebugMicros = micros();
 	}
 }
@@ -183,7 +184,7 @@ void checkSerial() {
 	while (Serial.available() > 0) {
 		data += Serial.readString();
 		if (data.endsWith("\n")) {
-			data.replace("\n", "");			
+			data.replace("\n", "");
 		}
 		splitSerialData(data);
 	}
@@ -195,7 +196,7 @@ void splitSerialData(String data) {
 	while (tempData.length() > 0) {
 		int index = tempData.indexOf(";");
 		String subString = "";
-		if (index == 0 || index == -1) {			
+		if (index == 0 || index == -1) {
 			subString = tempData.substring(0);
 		}
 		else {
@@ -206,7 +207,7 @@ void splitSerialData(String data) {
 	}
 }
 
-void parseSerialData(String data) {	
+void parseSerialData(String data) {
 	String command = data.substring(0, 2);
 	String value = data.substring(2);
 	if (command == "br") {
@@ -321,7 +322,7 @@ void fadeBurst() {
 		}
 		else {
 			ledColor = WHITE;
-		}	
+		}
 		return;
 	}
 	else {
@@ -341,7 +342,7 @@ void fade() {
 		}
 		else {
 			brightness++;
-		}		
+		}
 	}
 	else {
 		if (brightness == 0) {
@@ -352,7 +353,7 @@ void fade() {
 		}
 		else {
 			brightness--;
-		}		
+		}
 	}
 	setLedState();
 }
@@ -371,35 +372,35 @@ void fadeSeq() {
 
 void fadeBoth() {
 	if (fadeUp) {
-		if (bright1 == 255) {
+		if (pauseDelay1 == 1000) {
 			fadeUp = false;
 			fadeCounter++;
-			pauseDelay = pauseDelay2;
-			changeState(PAUSE);
+			//pauseDelay = pauseDelay2;
+			//changeState(PAUSE);
 		}
 		else {
-			bright1++;
-			bright2--;
-			pauseDelay = pauseDelay3;
-			changeState(PAUSE);		
-		}		
+			pauseDelay1++;
+			pauseDelay2--;
+			//pauseDelay = pauseDelay3;
+			//changeState(PAUSE);		
+		}
 	}
 	else {
-		if (bright2 == 255) {
+		if (pauseDelay2 == 1000) {
 			fadeUp = true;
 			fadeCounter++;
-			pauseDelay = pauseDelay1;
-			changeState(PAUSE);
+			//pauseDelay = pauseDelay1;
+			//changeState(PAUSE);
 		}
 		else {
-			bright1--;
-			bright2++;
-			pauseDelay = pauseDelay3;
-			changeState(PAUSE);		
-		}		
+			pauseDelay2++;
+			pauseDelay1--;
+			//pauseDelay = pauseDelay3;
+			//changeState(PAUSE);		
+		}
 	}
 
-	setLedState();
+	//setLedState();
 	flipColor();
 }
 
@@ -413,20 +414,21 @@ void pause() {
 	}
 
 	if (previousState == FADE_BOTH) {
-		setLedState();
-		flipColor();
+		//setLedState();
+		//flipColor();
 	}
 }
 
 void flipColor() {
 	if (ledColor == WHITE) {
 		ledColor = MULTI;
-		brightness = bright1;
+		pauseDelay = pauseDelay1;
 	}
 	else {
 		ledColor = WHITE;
-		brightness = bright2;
+		pauseDelay = pauseDelay2;
 	}
+	changeState(PAUSE);
 }
 
 void changeState(STATE newState) {
