@@ -33,7 +33,7 @@ unsigned long stateInterval;
 
 unsigned long previousDebugMicros;
 unsigned long debugInterval;
-bool debug = true;
+bool debug = false;
 
 STATE machineState;
 STATE previousState;
@@ -50,6 +50,11 @@ int pauseDelay;
 int pauseDelay1 = 10;
 int pauseDelay2 = 250;
 int pauseDelay3 = 1;
+
+//int counter;
+unsigned long pauseBothCounter;
+unsigned long pauseBothDelay;
+bool pauseBothBit = false;
 
 void setup() {
 	pinMode(5, OUTPUT);
@@ -121,9 +126,11 @@ void startup() {
 		bright2 = 255;
 		brightness = 255;
 		pauseDelay1 = 0;
-		pauseDelay2 = 275;
+		pauseDelay2 = 300;
 		stateInterval = 5;
 		ledColor = MULTI;
+		pauseBothCounter = 0;
+		pauseBothBit = false;
 		break;
 
 	case FADE_BURST:
@@ -176,6 +183,8 @@ void displayDebugInfo() {
 	debugInfo += "FC=" + String(fadeCounter) + " ";
 	debugInfo += "B1=" + String(bright1) + " ";
 	debugInfo += "B2=" + String(bright2) + " ";
+	debugInfo += "PBC=" + String(pauseBothCounter) + " ";
+	debugInfo += "PBD=" + String(pauseBothDelay) + " ";
 
 	Serial.println(debugInfo);
 }
@@ -270,14 +279,14 @@ void stateMachine() {
 
 	case FADE_BURST:
 		fadeBurst();
+		break;	
+
+	case OFF:
+		offState();
 		break;
 
 	case PAUSE:
 		pause();
-		break;
-
-	case OFF:
-		offState();
 		break;
 
 	default:
@@ -371,29 +380,19 @@ void fadeSeq() {
 	}
 }
 
-int counter;
-int pauseBothCounter;
-int pauseBothDelay;
-bool pauseBothBit = false;
+
 
 void fadeBoth() {
 	
 	if (!pauseBothBit) {
 		flipColor();
 		if (fadeUp) {
-			if (pauseDelay1 == 275) {
+			if (pauseDelay1 == 300) {
 				fadeUp = false;
 				fadeCounter++;
-				//for (int i = 0; i < 30000; i++)
-				//{
-				//	counter++;
-				//	//flipColor();
-				//}
-				//pauseDelay = 1000;
-				//changeState(PAUSE);
-				//return;
 				pauseBothBit = true;
-				pauseBothDelay = 1000;
+				pauseBothDelay = 50000;
+				return;
 			}
 			else {
 				pauseDelay1++;
@@ -407,7 +406,8 @@ void fadeBoth() {
 				fadeUp = true;
 				fadeCounter++;
 				pauseBothBit = true;
-				pauseBothDelay = 1000;
+				pauseBothDelay = 50000;
+				return;
 				//for (int i = 0; i < 30000; i++)
 				//{
 				//	counter++;
@@ -425,9 +425,7 @@ void fadeBoth() {
 	}
 	else {
 		pauseBoth();
-	}
-
-	
+	}	
 
 	//setLedState();	
 }
@@ -464,7 +462,7 @@ void pauseBoth() {
 	else {
 		pauseBothCounter++;
 	}
-	flipColor();
+	//flipColor();
 }
 
 void changeState(STATE newState) {
