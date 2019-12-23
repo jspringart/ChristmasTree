@@ -53,6 +53,11 @@ int pauseDelay1 = 10;
 int pauseDelay2 = 250;
 int pauseDelay3 = 1;
 
+//int counter;
+unsigned long pauseBothCounter;
+unsigned long pauseBothDelay;
+bool pauseBothBit = false;
+
 void setup() {
 	pinMode(5, OUTPUT);
 	pinMode(6, OUTPUT);
@@ -214,6 +219,8 @@ void displayDebugInfo() {
 	debugInfo += "FC=" + String(fadeCounter) + " ";
 	debugInfo += "B1=" + String(bright1) + " ";
 	debugInfo += "B2=" + String(bright2) + " ";
+	debugInfo += "PBC=" + String(pauseBothCounter) + " ";
+	debugInfo += "PBD=" + String(pauseBothDelay) + " ";
 
 	Serial.println(debugInfo);
 }
@@ -413,38 +420,54 @@ void fadeSeq() {
 	}
 }
 
+
+
 void fadeBoth() {
-	if (fadeUp) {
-		if (bright1 == 255) {
-			fadeUp = false;
-			fadeCounter++;
-			pauseDelay = pauseDelay2;
-			changeState(PAUSE);
+	
+	if (!pauseBothBit) {
+		flipColor();
+		if (fadeUp) {
+			if (pauseDelay1 == 300) {
+				fadeUp = false;
+				fadeCounter++;
+				pauseBothBit = true;
+				pauseBothDelay = 50000;
+				return;
+			}
+			else {
+				pauseDelay1++;
+				pauseDelay2--;
+				//pauseDelay = pauseDelay3;
+				//changeState(PAUSE);		
+			}
 		}
 		else {
-			bright1++;
-			bright2--;
-			pauseDelay = pauseDelay3;
-			changeState(PAUSE);		
-		}		
+			if (pauseDelay1 == 0) {
+				fadeUp = true;
+				fadeCounter++;
+				pauseBothBit = true;
+				pauseBothDelay = 50000;
+				return;
+				//for (int i = 0; i < 30000; i++)
+				//{
+				//	counter++;
+				//	//flipColor();
+				//}
+			}
+			else {
+				pauseDelay1--;
+				pauseDelay2++;				
+				
+				//pauseDelay = pauseDelay3;
+				//changeState(PAUSE);		
+			}
+		}
 	}
 	else {
-		if (bright2 == 255) {
-			fadeUp = true;
-			fadeCounter++;
-			pauseDelay = pauseDelay1;
-			changeState(PAUSE);
-		}
-		else {
-			bright1--;
-			bright2++;
-			pauseDelay = pauseDelay3;
-			changeState(PAUSE);		
-		}		
-	}
+		pauseBoth();
+	}	
 
-	setLedState();
-	flipColor();
+	//setLedState();	
 }
 
 void pause() {
@@ -455,21 +478,27 @@ void pause() {
 	else {
 		pauseCounter++;
 	}
-
-	if (previousState == FADE_BOTH) {
-		setLedState();
-		flipColor();
-	}
 }
 
 void flipColor() {
 	if (ledColor == WHITE) {
 		ledColor = MULTI;
-		brightness = bright1;
+		pauseDelay = pauseDelay1;
 	}
 	else {
 		ledColor = WHITE;
-		brightness = bright2;
+		pauseDelay = pauseDelay2;
+	}
+	setLedState();	
+}
+
+void pauseBoth() {
+	if (pauseBothCounter >= pauseBothDelay) {
+		pauseBothCounter = 0;
+		pauseBothBit = false;
+	}
+	else {
+		pauseBothCounter++;
 	}
 }
 
