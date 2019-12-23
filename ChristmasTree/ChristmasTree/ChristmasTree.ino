@@ -35,7 +35,7 @@ unsigned long stateInterval;
 
 unsigned long previousDebugMicros;
 unsigned long debugInterval;
-bool debug = true;
+bool debug = false;
 
 STATE machineState;
 STATE previousState;
@@ -114,7 +114,7 @@ void startup() {
 	case FADE_WHITE:
 		ledColor = WHITE;
 		brightness = 0;
-		stateInterval = 50000;
+		stateInterval = 10000;
 		fadeUp = true;
 		fadeCounter = 0;
 		bright1 = 0;
@@ -127,7 +127,7 @@ void startup() {
 	case FADE_MULTI:
 		ledColor = MULTI;
 		brightness = 0;
-		stateInterval = 50000;
+		stateInterval = 10000;
 		fadeUp = true;
 		fadeCounter = 0;
 		bright1 = 0;
@@ -140,7 +140,7 @@ void startup() {
 	case FADE_SEQ:
 		ledColor = WHITE;
 		brightness = 0;
-		stateInterval = 50000;
+		stateInterval = 10000;
 		fadeUp = true;
 		fadeCounter = 0;
 		bright1 = 0;
@@ -152,21 +152,21 @@ void startup() {
 
 	case FADE_BOTH:
 		ledColor = WHITE;
-		brightness = 0;
-		stateInterval = 4000;
+		brightness = 255;
+		stateInterval = 5;
 		fadeUp = true;
 		fadeCounter = 0;
 		bright1 = 0;
-		bright2 = 255;
-		pauseDelay1 = 1000;
-		pauseDelay2 = 500;
+		bright2 = 0;
+		pauseDelay1 = 300;
+		pauseDelay2 = 0;
 		pauseDelay3 = 1;
 		break;
 
 	case FADE_BURST:
 		ledColor = WHITE;
 		brightness = 255;
-		stateInterval = 8000;
+		stateInterval = 7000;
 		fadeUp = true;
 		fadeCounter = 0;
 		bright1 = 0;
@@ -427,7 +427,7 @@ void fadeBoth() {
 				fadeUp = false;
 				fadeCounter++;
 				pauseBothBit = true;
-				pauseBothDelay = 50000;
+				pauseBothDelay = 10;
 				return;
 			}
 			else {
@@ -440,7 +440,7 @@ void fadeBoth() {
 				fadeUp = true;
 				fadeCounter++;
 				pauseBothBit = true;
-				pauseBothDelay = 50000;
+				pauseBothDelay = 10;
 				return;
 			}
 			else {
