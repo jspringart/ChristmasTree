@@ -51,7 +51,6 @@ int pauseDelay1 = 10;
 int pauseDelay2 = 250;
 int pauseDelay3 = 1;
 
-//int counter;
 unsigned long pauseBothCounter;
 unsigned long pauseBothDelay;
 bool pauseBothBit = false;
@@ -380,8 +379,6 @@ void fadeSeq() {
 	}
 }
 
-
-
 void fadeBoth() {
 	
 	if (!pauseBothBit) {
@@ -397,8 +394,6 @@ void fadeBoth() {
 			else {
 				pauseDelay1++;
 				pauseDelay2--;
-				//pauseDelay = pauseDelay3;
-				//changeState(PAUSE);		
 			}
 		}
 		else {
@@ -408,26 +403,16 @@ void fadeBoth() {
 				pauseBothBit = true;
 				pauseBothDelay = 50000;
 				return;
-				//for (int i = 0; i < 30000; i++)
-				//{
-				//	counter++;
-				//	//flipColor();
-				//}
 			}
 			else {
 				pauseDelay1--;
-				pauseDelay2++;				
-				
-				//pauseDelay = pauseDelay3;
-				//changeState(PAUSE);		
+				pauseDelay2++;		
 			}
 		}
 	}
 	else {
 		pauseBoth();
-	}	
-
-	//setLedState();	
+	}
 }
 
 void pause() {
@@ -462,7 +447,6 @@ void pauseBoth() {
 	else {
 		pauseBothCounter++;
 	}
-	//flipColor();
 }
 
 void changeState(STATE newState) {
