@@ -26,7 +26,7 @@ enum COLOR {
 
 void changeState(STATE newState);
 
-volatile uint8_t *dutyCyclePointer;
+//volatile uint8_t *dutyCyclePointer;
 
 unsigned long currentMicros;
 
@@ -53,7 +53,6 @@ int pauseDelay1 = 10;
 int pauseDelay2 = 250;
 int pauseDelay3 = 1;
 
-//int counter;
 unsigned long pauseBothCounter;
 unsigned long pauseBothDelay;
 bool pauseBothBit = false;
@@ -70,7 +69,7 @@ void setup() {
 
 	OCR0A = 0; //duty cycle for pin 6
 	OCR0B = 0; //duty cycle for pin 5
-	dutyCyclePointer = &OCR0A;
+	//dutyCyclePointer = &OCR0A;
 
 	stateInterval = 500000;
 	debugInterval = 500000;
@@ -420,10 +419,7 @@ void fadeSeq() {
 	}
 }
 
-
-
-void fadeBoth() {
-	
+void fadeBoth() {	
 	if (!pauseBothBit) {
 		flipColor();
 		if (fadeUp) {
@@ -436,9 +432,7 @@ void fadeBoth() {
 			}
 			else {
 				pauseDelay1++;
-				pauseDelay2--;
-				//pauseDelay = pauseDelay3;
-				//changeState(PAUSE);		
+				pauseDelay2--;	
 			}
 		}
 		else {
@@ -448,26 +442,16 @@ void fadeBoth() {
 				pauseBothBit = true;
 				pauseBothDelay = 50000;
 				return;
-				//for (int i = 0; i < 30000; i++)
-				//{
-				//	counter++;
-				//	//flipColor();
-				//}
 			}
 			else {
 				pauseDelay1--;
-				pauseDelay2++;				
-				
-				//pauseDelay = pauseDelay3;
-				//changeState(PAUSE);		
+				pauseDelay2++;		
 			}
 		}
 	}
 	else {
 		pauseBoth();
-	}	
-
-	//setLedState();	
+	}
 }
 
 void pause() {
