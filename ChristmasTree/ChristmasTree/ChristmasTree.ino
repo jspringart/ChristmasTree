@@ -151,16 +151,18 @@ void startup() {
 		break;
 
 	case FADE_BOTH:
-		ledColor = WHITE;
+		ledColor = MULTI;
 		brightness = 255;
 		stateInterval = 5;
 		fadeUp = true;
 		fadeCounter = 0;
-		bright1 = 0;
-		bright2 = 0;
-		pauseDelay1 = 300;
-		pauseDelay2 = 0;
+		bright1 = 255;
+		bright2 = 255;
+		pauseDelay1 = 0;
+		pauseDelay2 = 300;
 		pauseDelay3 = 1;
+		pauseBothCounter = 0;
+		pauseBothBit = false;
 		break;
 
 	case FADE_BURST:
@@ -427,7 +429,7 @@ void fadeBoth() {
 				fadeUp = false;
 				fadeCounter++;
 				pauseBothBit = true;
-				pauseBothDelay = 10;
+				pauseBothDelay = 50000;
 				return;
 			}
 			else {
@@ -440,7 +442,7 @@ void fadeBoth() {
 				fadeUp = true;
 				fadeCounter++;
 				pauseBothBit = true;
-				pauseBothDelay = 10;
+				pauseBothDelay = 50000;
 				return;
 			}
 			else {
@@ -465,6 +467,7 @@ void pause() {
 }
 
 void flipColor() {
+	
 	if (ledColor == WHITE) {
 		ledColor = MULTI;
 		pauseDelay = pauseDelay1;
@@ -472,8 +475,9 @@ void flipColor() {
 	else {
 		ledColor = WHITE;
 		pauseDelay = pauseDelay2;
-	}
-	setLedState();	
+	}	
+	setLedState();
+	changeState(PAUSE);
 }
 
 void pauseBoth() {
