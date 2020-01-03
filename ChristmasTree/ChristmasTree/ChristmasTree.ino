@@ -26,8 +26,6 @@ enum COLOR {
 
 void changeState(STATE newState);
 
-//volatile uint8_t *dutyCyclePointer;
-
 unsigned long currentMicros;
 
 unsigned long previousStateMicros;
@@ -69,7 +67,6 @@ void setup() {
 
 	OCR0A = 0; //duty cycle for pin 6
 	OCR0B = 0; //duty cycle for pin 5
-	//dutyCyclePointer = &OCR0A;
 
 	stateInterval = 500000;
 	debugInterval = 500000;
@@ -473,6 +470,7 @@ void flipColor() {
 		ledColor = WHITE;
 		pauseDelay = pauseDelay2;
 	}
+	changeState(PAUSE);
 	setLedState();	
 }
 
