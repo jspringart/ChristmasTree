@@ -111,6 +111,7 @@
     <DebuggerFlavor>VisualMicroDebugger</DebuggerFlavor>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="christmas-tree.ino" />
     <None Include="ChristmasTree.ino">
       <FileType>CppCode</FileType>
     </None>
